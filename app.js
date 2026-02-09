@@ -1,25 +1,17 @@
 // ==========================================
-// Box 73 - Sistema de Indicação
-// Main Application Logic (Corrigido)
+// Box 73 - Painel da Oficina (app.js)
 // ==========================================
 
 // ==========================================
-// State Management
+// State
 // ==========================================
-let currentUser = null;
-let currentScreen = 'landing-page';
 let ambassadors = [];
 let referrals = [];
-let settings = {
-    discount: CONFIG.DEFAULT_DISCOUNT,
-    whatsappMessage: CONFIG.DEFAULT_WHATSAPP_MESSAGE
-};
+let supabaseClient = null;
 
 // ==========================================
-// Supabase Client
+// Supabase Init
 // ==========================================
-let supabase = null;
-
 function initSupabase() {
     if (CONFIG.USE_MOCK_DATA) {
         console.log('Rodando em modo MOCK DATA');
@@ -33,11 +25,8 @@ function initSupabase() {
     }
 
     try {
-        supabase = window.supabase.createClient(
-            CONFIG.SUPABASE_URL,
-            CONFIG.SUPABASE_ANON_KEY
-        );
-        console.log('Supabase inicializado');
+        supabaseClient = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+        console.log('Supabase inicializado com sucesso');
     } catch (error) {
         console.error('Falha ao inicializar Supabase:', error);
         CONFIG.USE_MOCK_DATA = true;
@@ -46,61 +35,17 @@ function initSupabase() {
 }
 
 // ==========================================
-// Mock Data (para testes sem Supabase)
+// Mock Data
 // ==========================================
 const MOCK_DATA = {
     ambassadors: [
-        {
-            id: 1,
-            nome: 'João Silva',
-            email: 'joao@example.com',
-            telefone: '(11) 98765-4321',
-            codigo: 'JOAO73',
-            data_cadastro: new Date().toISOString()
-        },
-        {
-            id: 2,
-            nome: 'Maria Santos',
-            email: 'maria@example.com',
-            telefone: '(11) 99876-5432',
-            codigo: 'MARIA73',
-            data_cadastro: new Date().toISOString()
-        }
+        { id: 1, nome: 'João Silva', cpf: '111.222.333-44', telefone: '(65) 98765-4321', codigo: 'JOAO73', data_cadastro: new Date().toISOString() },
+        { id: 2, nome: 'Maria Santos', cpf: '555.666.777-88', telefone: '(65) 99876-5432', codigo: 'MARIA73', data_cadastro: new Date().toISOString() }
     ],
     referrals: [
-        {
-            id: 1,
-            codigo_usado: 'JOAO73',
-            nome_indicado: 'Pedro Costa',
-            telefone_indicado: '(11) 91234-5678',
-            data_indicacao: new Date(Date.now() - 86400000 * 2).toISOString(),
-            status: 'Usado',
-            valor_desconto: 10,
-            data_uso: new Date(Date.now() - 86400000 * 2).toISOString(),
-            observacoes: 'Revisão completa'
-        },
-        {
-            id: 2,
-            codigo_usado: 'JOAO73',
-            nome_indicado: 'Ana Paula',
-            telefone_indicado: '(11) 98888-7777',
-            data_indicacao: new Date(Date.now() - 86400000).toISOString(),
-            status: 'Validado',
-            valor_desconto: 10,
-            data_uso: new Date(Date.now() - 86400000).toISOString(),
-            observacoes: ''
-        },
-        {
-            id: 3,
-            codigo_usado: 'MARIA73',
-            nome_indicado: 'Carlos Mendes',
-            telefone_indicado: '(11) 97777-6666',
-            data_indicacao: new Date().toISOString(),
-            status: 'Usado',
-            valor_desconto: 10,
-            data_uso: new Date().toISOString(),
-            observacoes: 'Troca de óleo'
-        }
+        { id: 1, codigo_usado: 'JOAO73', nome_indicado: 'Pedro Costa', telefone_indicado: '(65) 91234-5678', data_uso: new Date(Date.now() - 86400000 * 2).toISOString(), status: 'Usado', valor_desconto: 10, observacoes: 'Revisão completa' },
+        { id: 2, codigo_usado: 'JOAO73', nome_indicado: 'Ana Paula', telefone_indicado: '(65) 98888-7777', data_uso: new Date(Date.now() - 86400000).toISOString(), status: 'Usado', valor_desconto: 10, observacoes: 'Troca de óleo' },
+        { id: 3, codigo_usado: 'MARIA73', nome_indicado: 'Carlos Mendes', telefone_indicado: '(65) 97777-6666', data_uso: new Date().toISOString(), status: 'Usado', valor_desconto: 10, observacoes: 'Revisão completa' }
     ]
 };
 
@@ -114,30 +59,45 @@ async function loadData() {
             ambassadors = [...MOCK_DATA.ambassadors];
             referrals = [...MOCK_DATA.referrals];
         } else {
-            // Supabase: carregar embaixadores
-            const { data: ambData, error: ambError } = await supabase
-                .from('embaixadores')
-                .select('*');
+            const { data: ambData, error: ambError } = await supabaseClient.from('embaixadores').select('*');
             if (ambError) throw ambError;
             ambassadors = ambData || [];
 
-            // Supabase: carregar indicações
-            const { data: refData, error: refError } = await supabase
-                .from('indicacoes')
-                .select('*');
+            const { data: refData, error: refError } = await supabaseClient.from('indicacoes').select('*');
             if (refError) throw refError;
             referrals = refData || [];
         }
         console.log('Dados carregados:', { ambassadors: ambassadors.length, referrals: referrals.length });
     } catch (error) {
         console.error('Erro ao carregar dados:', error);
-        showToast('Erro ao carregar dados. Usando dados de exemplo.', 'error');
-        // Fallback para mock
+        showToast('Erro ao carregar dados.', 'error');
         ambassadors = [...MOCK_DATA.ambassadors];
         referrals = [...MOCK_DATA.referrals];
     } finally {
         showLoading(false);
     }
+}
+
+// ==========================================
+// CPF Formatting
+// ==========================================
+function formatCPF(value) {
+    const digits = value.replace(/\D/g, '').substring(0, 11);
+    if (digits.length <= 3) return digits;
+    if (digits.length <= 6) return digits.replace(/(\d{3})(\d+)/, '$1.$2');
+    if (digits.length <= 9) return digits.replace(/(\d{3})(\d{3})(\d+)/, '$1.$2.$3');
+    return digits.replace(/(\d{3})(\d{3})(\d{3})(\d+)/, '$1.$2.$3-$4');
+}
+
+function formatPhone(value) {
+    const digits = value.replace(/\D/g, '').substring(0, 11);
+    if (digits.length <= 2) return digits;
+    if (digits.length <= 7) return digits.replace(/(\d{2})(\d+)/, '($1) $2');
+    return digits.replace(/(\d{2})(\d{5})(\d+)/, '($1) $2-$3');
+}
+
+function cleanCPF(cpf) {
+    return cpf.replace(/\D/g, '');
 }
 
 // ==========================================
@@ -161,193 +121,57 @@ function generateCode(name) {
 }
 
 // ==========================================
-// Authentication & User Management
+// Register Ambassador (Oficina cadastra)
 // ==========================================
-async function login(emailOrPhone) {
+async function registerAmbassador(name, cpf, phone, couponCode) {
     await loadData();
 
-    const user = ambassadors.find(a =>
-        a.email === emailOrPhone || a.telefone === emailOrPhone
-    );
+    const cleanedCPF = cleanCPF(cpf);
 
-    if (user) {
-        currentUser = user;
-        saveUserSession();
-        goToScreen('embaixador-dashboard');
-        loadDashboard();
-        showToast('Login realizado com sucesso!', 'success');
-        return true;
-    } else {
-        showToast('Usuário não encontrado. Verifique email ou telefone.', 'error');
-        return false;
-    }
-}
-
-async function register(name, email, phone) {
-    await loadData();
-
-    if (ambassadors.some(a => a.email === email || a.telefone === phone)) {
-        showToast('Email ou telefone já cadastrado', 'error');
+    // Verificar CPF duplicado
+    if (ambassadors.some(a => cleanCPF(a.cpf) === cleanedCPF)) {
+        showToast('CPF já cadastrado!', 'error');
         return false;
     }
 
-    const code = generateCode(name);
+    // Verificar código duplicado
+    const upperCode = couponCode.toUpperCase().trim();
+    if (ambassadors.some(a => a.codigo === upperCode)) {
+        showToast('Este código de cupom já existe! Escolha outro.', 'error');
+        return false;
+    }
+
     const now = new Date().toISOString();
 
     if (CONFIG.USE_MOCK_DATA) {
-        const newId = MOCK_DATA.ambassadors.length + 1;
-        const newUser = { id: newId, nome: name, email, telefone: phone, codigo: code, data_cadastro: now };
+        const newUser = { id: MOCK_DATA.ambassadors.length + 1, nome: name, cpf: cpf, telefone: phone, codigo: upperCode, data_cadastro: now };
         MOCK_DATA.ambassadors.push(newUser);
         ambassadors.push(newUser);
-        currentUser = newUser;
     } else {
-        const { data, error } = await supabase
+        const { data, error } = await supabaseClient
             .from('embaixadores')
-            .insert([{ nome: name, email, telefone: phone, codigo: code, data_cadastro: now }])
+            .insert([{ nome: name, cpf: cpf, telefone: phone, codigo: upperCode, data_cadastro: now }])
             .select()
             .single();
 
         if (error) {
             console.error('Erro ao cadastrar:', error);
-            showToast('Erro ao cadastrar. Tente novamente.', 'error');
+            if (error.code === '23505') {
+                showToast('CPF ou cupom já cadastrado!', 'error');
+            } else {
+                showToast('Erro ao cadastrar. Tente novamente.', 'error');
+            }
             return false;
         }
         ambassadors.push(data);
-        currentUser = data;
     }
 
-    saveUserSession();
-    goToScreen('embaixador-dashboard');
-    loadDashboard();
-    showToast('Cadastro realizado com sucesso!', 'success');
+    showToast('Embaixador cadastrado com sucesso! 🎉', 'success');
     return true;
 }
 
-function logout() {
-    currentUser = null;
-    localStorage.removeItem('box73_user');
-    goToScreen('landing-page');
-    showToast('Logout realizado', 'success');
-}
-
-function saveUserSession() {
-    if (currentUser) {
-        localStorage.setItem('box73_user', JSON.stringify(currentUser));
-    }
-}
-
-function loadUserSession() {
-    const savedUser = localStorage.getItem('box73_user');
-    if (savedUser) {
-        try {
-            currentUser = JSON.parse(savedUser);
-            goToScreen('embaixador-dashboard');
-            loadDashboard();
-        } catch (e) {
-            localStorage.removeItem('box73_user');
-        }
-    }
-}
-
 // ==========================================
-// Dashboard
-// ==========================================
-async function loadDashboard() {
-    if (!currentUser) return;
-
-    await loadData();
-
-    // Atualizar info do usuário
-    document.getElementById('user-name').textContent = currentUser.nome.split(' ')[0];
-    document.getElementById('user-code').textContent = currentUser.codigo;
-    document.getElementById('display-code').textContent = currentUser.codigo;
-
-    // Estatísticas
-    const userReferrals = referrals.filter(r => r.codigo_usado === currentUser.codigo);
-    const totalReferrals = userReferrals.length;
-    const pendingReferrals = userReferrals.filter(r => r.status === 'Pendente').length;
-    const convertedReferrals = userReferrals.filter(r => r.status === 'Usado' || r.status === 'Validado').length;
-
-    document.getElementById('stat-total').textContent = totalReferrals;
-    document.getElementById('stat-pending').textContent = pendingReferrals;
-    document.getElementById('stat-converted').textContent = convertedReferrals;
-
-    // Preview WhatsApp
-    const message = settings.whatsappMessage
-        .replace('{{CODE}}', currentUser.codigo)
-        .replace('{{DISCOUNT}}', settings.discount);
-    document.getElementById('whatsapp-preview').textContent = message;
-
-    // Lista de indicações
-    loadReferralsList(userReferrals);
-}
-
-function loadReferralsList(userReferrals) {
-    const container = document.getElementById('referrals-list');
-
-    if (userReferrals.length === 0) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <div class="empty-state-icon">📭</div>
-                <p>Nenhuma indicação ainda.<br>Compartilhe seu cupom para começar!</p>
-            </div>
-        `;
-        return;
-    }
-
-    userReferrals.sort((a, b) => new Date(b.data_indicacao) - new Date(a.data_indicacao));
-
-    container.innerHTML = userReferrals.map(ref => {
-        const date = new Date(ref.data_indicacao).toLocaleDateString('pt-BR');
-        const statusClass = ref.status === 'Usado' ? 'status-used' :
-            ref.status === 'Validado' ? 'status-validated' : 'status-pending';
-
-        return `
-            <div class="referral-item">
-                <div class="referral-info">
-                    <h3>${ref.nome_indicado || 'Aguardando validação'}</h3>
-                    <p>${date}</p>
-                </div>
-                <span class="referral-status ${statusClass}">${ref.status}</span>
-            </div>
-        `;
-    }).join('');
-}
-
-// ==========================================
-// WhatsApp Sharing
-// ==========================================
-function shareWhatsApp() {
-    if (!currentUser) return;
-
-    const message = settings.whatsappMessage
-        .replace('{{CODE}}', currentUser.codigo)
-        .replace('{{DISCOUNT}}', settings.discount);
-
-    const encodedMessage = encodeURIComponent(message);
-    window.open(`https://wa.me/?text=${encodedMessage}`, '_blank');
-    showToast('Abrindo WhatsApp...', 'success');
-}
-
-function copyCode() {
-    if (!currentUser) return;
-
-    navigator.clipboard.writeText(currentUser.codigo).then(() => {
-        showToast('Código copiado!', 'success');
-    }).catch(() => {
-        // Fallback para navegadores que não suportam clipboard API
-        const textarea = document.createElement('textarea');
-        textarea.value = currentUser.codigo;
-        document.body.appendChild(textarea);
-        textarea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textarea);
-        showToast('Código copiado!', 'success');
-    });
-}
-
-// ==========================================
-// Oficina - Validação de Cupons
+// Validate Coupon
 // ==========================================
 async function validateCoupon(code) {
     await loadData();
@@ -358,7 +182,6 @@ async function validateCoupon(code) {
 
     if (ambassador) {
         const ambassadorReferrals = referrals.filter(r => r.codigo_usado === upperCode);
-        const totalUses = ambassadorReferrals.length;
 
         resultDiv.className = 'validation-result valid';
         resultDiv.style.display = 'block';
@@ -366,11 +189,10 @@ async function validateCoupon(code) {
             <div class="result-header">
                 <div class="result-icon">✅</div>
                 <div class="result-message">
-                    <h3>Cupom Válido</h3>
+                    <h3>Cupom Válido!</h3>
                     <p>Embaixador encontrado</p>
                 </div>
             </div>
-            
             <div class="ambassador-highlight">
                 <div class="highlight-item">
                     <span class="highlight-label">Embaixador</span>
@@ -383,15 +205,14 @@ async function validateCoupon(code) {
                     </a>
                 </div>
             </div>
-
             <div class="stats-highlight">
                 <div class="stat-box">
-                    <span class="stat-number">${totalUses}</span>
-                    <span class="stat-desc">Indicações Totais</span>
+                    <span class="stat-number">${ambassadorReferrals.length}</span>
+                    <span class="stat-desc">Indicações deste embaixador</span>
                 </div>
                 <div class="stat-box accent">
-                    <span class="stat-number">${settings.discount}%</span>
-                    <span class="stat-desc">Desconto do Cupom</span>
+                    <span class="stat-number">${CONFIG.DEFAULT_DISCOUNT}%</span>
+                    <span class="stat-desc">Desconto</span>
                 </div>
             </div>
         `;
@@ -414,6 +235,9 @@ async function validateCoupon(code) {
     }
 }
 
+// ==========================================
+// Mark Coupon as Used
+// ==========================================
 async function markCouponAsUsed() {
     const form = document.getElementById('use-coupon-form');
     const code = form.dataset.code;
@@ -422,8 +246,8 @@ async function markCouponAsUsed() {
     const discountValue = document.getElementById('discount-value').value;
     const observations = document.getElementById('observations').value.trim();
 
-    if (!indicadoName || !indicadoPhone) {
-        showToast('Preencha nome e telefone do indicado', 'error');
+    if (!indicadoName) {
+        showToast('Preencha o nome do cliente indicado', 'error');
         return;
     }
 
@@ -432,19 +256,20 @@ async function markCouponAsUsed() {
         codigo_usado: code,
         nome_indicado: indicadoName,
         telefone_indicado: indicadoPhone,
-        data_indicacao: now,
-        status: 'Usado',
-        valor_desconto: parseInt(discountValue) || settings.discount,
         data_uso: now,
+        status: 'Usado',
+        valor_desconto: parseInt(discountValue) || CONFIG.DEFAULT_DISCOUNT,
         observacoes: observations
     };
+
+    showLoading(true);
 
     if (CONFIG.USE_MOCK_DATA) {
         newReferral.id = MOCK_DATA.referrals.length + 1;
         MOCK_DATA.referrals.push(newReferral);
         referrals.push(newReferral);
     } else {
-        const { data, error } = await supabase
+        const { data, error } = await supabaseClient
             .from('indicacoes')
             .insert([newReferral])
             .select()
@@ -453,12 +278,14 @@ async function markCouponAsUsed() {
         if (error) {
             console.error('Erro ao registrar uso:', error);
             showToast('Erro ao registrar. Tente novamente.', 'error');
+            showLoading(false);
             return;
         }
         referrals.push(data);
     }
 
-    showToast('Cupom registrado com sucesso!', 'success');
+    showLoading(false);
+    showToast('Cupom registrado com sucesso! 🎉', 'success');
 
     // Limpar form
     document.getElementById('indicado-name').value = '';
@@ -468,73 +295,64 @@ async function markCouponAsUsed() {
     document.getElementById('validation-result').style.display = 'none';
     document.getElementById('use-coupon-form').style.display = 'none';
 
-    // Recarregar painel
-    loadOficinaDashboard();
+    // Recarregar dashboard
+    loadDashboard();
 }
 
 // ==========================================
-// Oficina Dashboard
+// Dashboard da Oficina
 // ==========================================
-async function loadOficinaDashboard() {
+async function loadDashboard() {
     await loadData();
 
     const totalAmbassadors = ambassadors.length;
     const totalReferrals = referrals.length;
-    const convertedReferrals = referrals.filter(r => r.status === 'Usado' || r.status === 'Validado').length;
-    const conversionRate = totalReferrals > 0 ? Math.round((convertedReferrals / totalReferrals) * 100) : 0;
+    const convertedReferrals = referrals.filter(r => r.status === 'Usado').length;
+    const conversionRate = totalAmbassadors > 0 ? Math.round((totalReferrals / totalAmbassadors) * 10) / 10 : 0;
 
-    // Atualizar stats da oficina
-    const elTotalAmb = document.getElementById('office-total-ambassadors');
-    const elTotalRef = document.getElementById('office-total-referrals');
-    const elConvRate = document.getElementById('office-conversion-rate');
-
-    if (elTotalAmb) elTotalAmb.textContent = totalAmbassadors;
-    if (elTotalRef) elTotalRef.textContent = totalReferrals;
-    if (elConvRate) elConvRate.textContent = conversionRate + '%';
+    document.getElementById('office-total-ambassadors').textContent = totalAmbassadors;
+    document.getElementById('office-total-referrals').textContent = totalReferrals;
+    document.getElementById('office-conversion-rate').textContent = conversionRate + '/emb';
 
     // Lista de embaixadores
-    const container = document.getElementById('ambassadors-list');
-    if (!container) return;
-
+    const ambContainer = document.getElementById('ambassadors-list');
     if (ambassadors.length === 0) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <div class="empty-state-icon">👥</div>
-                <p>Nenhum embaixador cadastrado ainda</p>
-            </div>
-        `;
-        return;
-    }
-
-    container.innerHTML = ambassadors.map(amb => {
-        const ambReferrals = referrals.filter(r => r.codigo_usado === amb.codigo);
-        const date = new Date(amb.data_cadastro).toLocaleDateString('pt-BR');
-
-        return `
-            <div class="ambassador-item">
-                <div class="ambassador-info">
-                    <h3>${amb.nome}</h3>
-                    <p>${amb.telefone} · ${ambReferrals.length} indicação(ões) · Desde ${date}</p>
+        ambContainer.innerHTML = '<div class="empty-state"><div class="empty-state-icon">👥</div><p>Nenhum embaixador cadastrado ainda.<br>Vá em "Cadastrar" para adicionar.</p></div>';
+    } else {
+        ambContainer.innerHTML = ambassadors.map(amb => {
+            const ambRefs = referrals.filter(r => r.codigo_usado === amb.codigo);
+            const date = new Date(amb.data_cadastro).toLocaleDateString('pt-BR');
+            return `
+                <div class="ambassador-item">
+                    <div class="ambassador-info">
+                        <h3>${amb.nome}</h3>
+                        <p>${amb.telefone} · CPF: ${amb.cpf || '---'} · ${ambRefs.length} uso(s) · Desde ${date}</p>
+                    </div>
+                    <span class="ambassador-code">${amb.codigo}</span>
                 </div>
-                <span class="ambassador-code">${amb.codigo}</span>
-            </div>
-        `;
-    }).join('');
-}
-
-// ==========================================
-// Screen Navigation
-// ==========================================
-function goToScreen(screenId) {
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    const target = document.getElementById(screenId);
-    if (target) {
-        target.classList.add('active');
-        currentScreen = screenId;
+            `;
+        }).join('');
     }
 
-    if (screenId === 'oficina-panel') {
-        loadOficinaDashboard();
+    // Últimos cupons usados
+    const refContainer = document.getElementById('recent-referrals-list');
+    const sortedRefs = [...referrals].sort((a, b) => new Date(b.data_uso) - new Date(a.data_uso)).slice(0, 10);
+
+    if (sortedRefs.length === 0) {
+        refContainer.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🎫</div><p>Nenhum cupom validado ainda.</p></div>';
+    } else {
+        refContainer.innerHTML = sortedRefs.map(ref => {
+            const date = new Date(ref.data_uso).toLocaleDateString('pt-BR');
+            return `
+                <div class="referral-item">
+                    <div class="referral-info">
+                        <h3>${ref.nome_indicado}</h3>
+                        <p>Cupom: <strong>${ref.codigo_usado}</strong> · ${date} · ${ref.observacoes || 'Sem obs.'}</p>
+                    </div>
+                    <span class="referral-status status-used">${ref.status}</span>
+                </div>
+            `;
+        }).join('');
     }
 }
 
@@ -545,72 +363,103 @@ function showToast(message, type = 'success') {
     const toast = document.getElementById('toast');
     toast.textContent = message;
     toast.className = `toast ${type} show`;
-
-    setTimeout(() => {
-        toast.classList.remove('show');
-    }, 3000);
+    setTimeout(() => toast.classList.remove('show'), 3000);
 }
 
 function showLoading(show) {
     const overlay = document.getElementById('loading-overlay');
-    if (overlay) {
-        overlay.style.display = show ? 'flex' : 'none';
-    }
+    if (overlay) overlay.style.display = show ? 'flex' : 'none';
 }
 
 // ==========================================
-// Event Listeners
+// Tab Navigation
 // ==========================================
-document.addEventListener('DOMContentLoaded', () => {
-    // Inicializar Supabase
+function switchTab(tabId) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+
+    const clickedTab = document.querySelector(`[data-tab="${tabId}"]`);
+    const targetContent = document.getElementById(tabId);
+
+    if (clickedTab) clickedTab.classList.add('active');
+    if (targetContent) targetContent.classList.add('active');
+
+    if (tabId === 'tab-dashboard') loadDashboard();
+}
+
+// ==========================================
+// Initialize
+// ==========================================
+document.addEventListener('DOMContentLoaded', function () {
+    console.log('🔧 Box 73 - Painel da Oficina carregado');
     initSupabase();
 
-    // Landing page
-    document.getElementById('btn-embaixador').addEventListener('click', () => {
-        goToScreen('embaixador-login');
+    // Set client link
+    const baseUrl = window.location.href.replace('index.html', '').replace(/\/$/, '');
+    document.getElementById('client-link-url').textContent = baseUrl + '/cliente.html';
+
+    // Tabs
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.addEventListener('click', () => switchTab(tab.dataset.tab));
     });
 
-    document.getElementById('btn-oficina').addEventListener('click', () => {
-        goToScreen('oficina-panel');
-    });
+    // CPF mask
+    const cpfInput = document.getElementById('register-cpf');
+    if (cpfInput) {
+        cpfInput.addEventListener('input', (e) => {
+            e.target.value = formatCPF(e.target.value);
+        });
+    }
 
-    // Login
-    document.getElementById('btn-login').addEventListener('click', async () => {
-        const email = document.getElementById('login-email').value.trim();
-        if (email) {
-            await login(email);
-        } else {
-            showToast('Digite seu email ou telefone', 'error');
+    // Phone mask
+    const phoneInput = document.getElementById('register-phone');
+    if (phoneInput) {
+        phoneInput.addEventListener('input', (e) => {
+            e.target.value = formatPhone(e.target.value);
+        });
+    }
+
+    // Generate code button
+    document.getElementById('btn-generate-code').addEventListener('click', async () => {
+        const name = document.getElementById('register-name').value.trim();
+        if (!name) {
+            showToast('Digite o nome primeiro para gerar o código', 'error');
+            return;
         }
+        await loadData();
+        const code = generateCode(name);
+        document.getElementById('register-coupon').value = code;
+        showToast('Código gerado: ' + code, 'success');
     });
 
-    document.getElementById('btn-show-register').addEventListener('click', () => {
-        document.getElementById('register-form').style.display = 'block';
-    });
-
-    document.getElementById('btn-cancel-register').addEventListener('click', () => {
-        document.getElementById('register-form').style.display = 'none';
-    });
-
-    // Register
+    // Register ambassador
     document.getElementById('btn-register').addEventListener('click', async () => {
         const name = document.getElementById('register-name').value.trim();
-        const email = document.getElementById('register-email').value.trim();
+        const cpf = document.getElementById('register-cpf').value.trim();
         const phone = document.getElementById('register-phone').value.trim();
+        const coupon = document.getElementById('register-coupon').value.trim();
 
-        if (name && email && phone) {
-            await register(name, email, phone);
-        } else {
-            showToast('Preencha todos os campos', 'error');
+        if (!name || !cpf || !phone || !coupon) {
+            showToast('Preencha todos os campos obrigatórios', 'error');
+            return;
+        }
+
+        if (cleanCPF(cpf).length !== 11) {
+            showToast('CPF inválido. Deve ter 11 dígitos.', 'error');
+            return;
+        }
+
+        const success = await registerAmbassador(name, cpf, phone, coupon);
+        if (success) {
+            document.getElementById('register-name').value = '';
+            document.getElementById('register-cpf').value = '';
+            document.getElementById('register-phone').value = '';
+            document.getElementById('register-coupon').value = '';
+            switchTab('tab-dashboard');
         }
     });
 
-    // Dashboard
-    document.getElementById('btn-logout').addEventListener('click', logout);
-    document.getElementById('btn-copy-code').addEventListener('click', copyCode);
-    document.getElementById('btn-share-whatsapp').addEventListener('click', shareWhatsApp);
-
-    // Oficina
+    // Validate coupon
     document.getElementById('btn-validate').addEventListener('click', () => {
         const code = document.getElementById('search-coupon').value.trim();
         if (code) {
@@ -620,28 +469,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Mark as used
     document.getElementById('btn-mark-used').addEventListener('click', markCouponAsUsed);
 
-    // Back buttons
-    document.getElementById('back-from-login').addEventListener('click', () => {
-        goToScreen('landing-page');
+    // Copy client link
+    document.getElementById('btn-copy-client-link').addEventListener('click', () => {
+        const link = document.getElementById('client-link-url').textContent;
+        navigator.clipboard.writeText(link).then(() => {
+            showToast('Link copiado! 📋', 'success');
+        }).catch(() => {
+            showToast('Erro ao copiar', 'error');
+        });
     });
 
-    document.getElementById('back-from-oficina').addEventListener('click', () => {
-        goToScreen('landing-page');
-    });
-
-    // Enter key handlers
-    document.getElementById('login-email').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') document.getElementById('btn-login').click();
-    });
-
+    // Enter key on coupon search
     document.getElementById('search-coupon').addEventListener('keypress', (e) => {
         if (e.key === 'Enter') document.getElementById('btn-validate').click();
     });
 
-    // Carregar sessão salva
-    loadUserSession();
-
-    console.log('Box 73 - Sistema de Indicação inicializado');
+    // Load dashboard
+    loadDashboard();
 });

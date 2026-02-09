@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Box 73 - Consulta do Embaixador</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏍️</text></svg>">
+</head>
+
+<body>
+    <div id="app">
+        <!-- Tela de Consulta (CPF) -->
+        <section id="cliente-login" class="screen active">
+            <div class="container center-content">
+                <div class="brand-container">
+                    <h1 class="brand-title">Box 73</h1>
+                    <p class="brand-subtitle">🏍️ Consulta do Embaixador</p>
+                </div>
+
+                <div class="form-card compact">
+                    <h2 class="section-subtitle">Consultar Meus Cupons</h2>
+                    <p class="form-description">Digite seu CPF para ver quantos cupons seus já foram utilizados.</p>
+
+                    <div class="input-group">
+                        <input type="text" id="consulta-cpf" placeholder="Digite seu CPF" class="input-field input-large" maxlength="14">
+                    </div>
+
+                    <button class="btn btn-primary btn-large" id="btn-consultar">Consultar</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tela de Resultado -->
+        <section id="cliente-dashboard" class="screen">
+            <div class="container">
+                <button class="btn-back" id="back-from-dashboard">← Voltar</button>
+
+                <div class="brand-container small">
+                    <h1 class="brand-title small">Box 73</h1>
+                </div>
+
+                <div class="dashboard-header">
+                    <div>
+                        <h1 class="section-title">Olá, <span id="user-name">Embaixador</span>! 👋</h1>
+                        <p class="user-code">Seu cupom: <strong id="user-code">---</strong></p>
+                    </div>
+                </div>
+
+                <!-- Stats -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">🎫</div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="stat-total">0</div>
+                            <div class="stat-label">Total de Indicações</div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card accent-card">
+                        <div class="stat-icon">✅</div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="stat-converted">0</div>
+                            <div class="stat-label">Cupons Usados</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cupom para compartilhar -->
+                <div class="coupon-container">
+                    <h2 class="section-subtitle">Seu Cupom de Indicação</h2>
+                    <div class="coupon-wrapper">
+                        <div class="coupon-code" id="display-code">---</div>
+                        <div class="coupon-actions">
+                            <button class="btn btn-primary btn-icon" id="btn-share-whatsapp">
+                                <span class="icon">📱</span>
+                                <span>Compartilhar no WhatsApp</span>
+                            </button>
+                            <button class="btn btn-secondary btn-icon" id="btn-copy-code">
+                                <span class="icon">📋</span>
+                                <span>Copiar Código</span>
+                            </button>
+                        </div>
+                        <div class="whatsapp-preview">
+                            <p class="preview-label">Mensagem que será enviada:</p>
+                            <p class="preview-message" id="whatsapp-preview">...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Histórico -->
+                <div class="referrals-section">
+                    <h2 class="section-subtitle">Histórico de Indicações</h2>
+                    <div id="referrals-list" class="referrals-list">
+                        <!-- Preenchido via JS -->
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="toast"></div>
+
+    <!-- Loading -->
+    <div id="loading-overlay" class="loading-overlay" style="display: none;">
+        <div class="spinner"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <script src="cliente.js"></script>
+</body>
+
+</html>

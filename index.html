@@ -4,159 +4,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Box 73 - Sistema de Indicação</title>
+    <title>Box 73 - Painel da Oficina</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔧</text></svg>">
 </head>
 
 <body>
     <div id="app">
-        <!-- Landing Page -->
-        <section id="landing-page" class="screen active">
+        <section id="oficina-panel" class="screen active">
             <div class="container">
                 <div class="brand-container">
                     <h1 class="brand-title">Box 73</h1>
-                    <p class="brand-subtitle">Sistema de Indicação de Clientes</p>
+                    <p class="brand-subtitle">🔧 Painel da Oficina</p>
                 </div>
 
-                <div class="mode-selector">
-                    <button class="mode-card" id="btn-embaixador">
-                        <div class="mode-icon">🏍️</div>
-                        <h2>Sou Embaixador</h2>
-                        <p>Gerar ou acessar meu cupom de indicação</p>
-                    </button>
-
-                    <button class="mode-card" id="btn-oficina">
-                        <div class="mode-icon">🔧</div>
-                        <h2>Sou da Oficina</h2>
-                        <p>Validar cupons e gerenciar indicações</p>
-                    </button>
-                </div>
-            </div>
-        </section>
-
-        <!-- Embaixador Login/Register -->
-        <section id="embaixador-login" class="screen">
-            <div class="container">
-                <button class="btn-back" id="back-from-login">← Voltar</button>
-
-                <h1 class="section-title">Área do Embaixador</h1>
-
-                <div class="login-form">
-                    <h2 class="section-subtitle">Acessar Minha Conta</h2>
-                    <div class="input-group">
-                        <input type="text" id="login-email" placeholder="Seu email ou telefone" class="input-field">
-                    </div>
-                    <button class="btn btn-primary btn-large" id="btn-login">Entrar</button>
-
-                    <div class="divider">
-                        <span>ou</span>
-                    </div>
-
-                    <button class="btn btn-secondary btn-large" id="btn-show-register">Criar Minha Conta</button>
-
-                    <div id="register-form" class="register-container" style="display: none;">
-                        <h2 class="section-subtitle">Criar Conta de Embaixador</h2>
-                        <div class="input-group">
-                            <input type="text" id="register-name" placeholder="Seu nome completo" class="input-field">
-                        </div>
-                        <div class="input-group">
-                            <input type="email" id="register-email" placeholder="Seu email" class="input-field">
-                        </div>
-                        <div class="input-group">
-                            <input type="tel" id="register-phone" placeholder="Seu WhatsApp (com DDD)"
-                                class="input-field">
-                        </div>
-                        <div class="button-group">
-                            <button class="btn btn-primary" id="btn-register">Criar Conta</button>
-                            <button class="btn btn-secondary" id="btn-cancel-register">Cancelar</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Embaixador Dashboard -->
-        <section id="embaixador-dashboard" class="screen">
-            <div class="container">
-                <div class="dashboard-header">
-                    <div>
-                        <h1 class="section-title">Olá, <span id="user-name">Embaixador</span>!</h1>
-                        <p class="user-code">Seu código: <strong id="user-code">LOADING...</strong></p>
-                    </div>
-                    <button class="btn btn-secondary" id="btn-logout">Sair</button>
+                <!-- Tabs -->
+                <div class="tabs">
+                    <button class="tab active" data-tab="tab-dashboard">📊 Dashboard</button>
+                    <button class="tab" data-tab="tab-cadastro">➕ Cadastrar</button>
+                    <button class="tab" data-tab="tab-validar">🎫 Validar Cupom</button>
                 </div>
 
-                <!-- Stats Grid -->
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-icon">🎫</div>
-                        <div class="stat-content">
-                            <div class="stat-value" id="stat-total">0</div>
-                            <div class="stat-label">Total de Indicações</div>
-                        </div>
-                    </div>
-
-                    <div class="stat-card">
-                        <div class="stat-icon">⏳</div>
-                        <div class="stat-content">
-                            <div class="stat-value" id="stat-pending">0</div>
-                            <div class="stat-label">Aguardando Uso</div>
-                        </div>
-                    </div>
-
-                    <div class="stat-card accent-card">
-                        <div class="stat-icon">✅</div>
-                        <div class="stat-content">
-                            <div class="stat-value" id="stat-converted">0</div>
-                            <div class="stat-label">Confirmadas</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Coupon Display -->
-                <div class="coupon-container">
-                    <h2 class="section-subtitle">Seu Cupom de Indicação</h2>
-                    <div class="coupon-wrapper">
-                        <div class="coupon-code" id="display-code">LOADING...</div>
-                        <div class="coupon-actions">
-                            <button class="btn btn-primary btn-icon" id="btn-share-whatsapp">
-                                <span class="icon">📱</span>
-                                <span>Compartilhar no WhatsApp</span>
-                            </button>
-                            <button class="btn btn-secondary btn-icon" id="btn-copy-code">
-                                <span class="icon">📋</span>
-                                <span>Copiar Código</span>
-                            </button>
-                        </div>
-                        <div class="whatsapp-preview">
-                            <p class="preview-label">Mensagem que será enviada:</p>
-                            <p class="preview-message" id="whatsapp-preview">...</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Referrals List -->
-                <div class="referrals-section">
-                    <h2 class="section-subtitle">Minhas Indicações</h2>
-                    <div id="referrals-list" class="referrals-list">
-                        <!-- Será preenchido dinamicamente -->
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Painel da Oficina -->
-        <section id="oficina-panel" class="screen">
-            <div class="container">
-                <button class="btn-back" id="back-from-oficina">← Voltar</button>
-
-                <h1 class="section-title">Painel da Oficina</h1>
-
-                <!-- Lista de Embaixadores (Tela Inicial) -->
-                <div class="ambassadors-overview">
-                    <h2 class="section-subtitle">Embaixadores Ativos</h2>
-
-                    <div class="stats-grid" style="margin-bottom: var(--spacing-lg);">
+                <!-- Tab: Dashboard -->
+                <div id="tab-dashboard" class="tab-content active">
+                    <div class="stats-grid">
                         <div class="stat-card">
                             <div class="stat-icon">👥</div>
                             <div class="stat-content">
@@ -164,15 +35,13 @@
                                 <div class="stat-label">Embaixadores</div>
                             </div>
                         </div>
-
                         <div class="stat-card">
                             <div class="stat-icon">🎫</div>
                             <div class="stat-content">
                                 <div class="stat-value" id="office-total-referrals">0</div>
-                                <div class="stat-label">Indicações Totais</div>
+                                <div class="stat-label">Cupons Usados</div>
                             </div>
                         </div>
-
                         <div class="stat-card accent-card">
                             <div class="stat-icon">📈</div>
                             <div class="stat-content">
@@ -182,66 +51,112 @@
                         </div>
                     </div>
 
+                    <h2 class="section-subtitle">Embaixadores Cadastrados</h2>
                     <div id="ambassadors-list" class="ambassadors-list">
-                        <!-- Será preenchido dinamicamente -->
+                        <!-- Preenchido via JS -->
+                    </div>
+
+                    <h2 class="section-subtitle" style="margin-top: var(--spacing-2xl);">Últimos Cupons Validados</h2>
+                    <div id="recent-referrals-list" class="referrals-list">
+                        <!-- Preenchido via JS -->
                     </div>
                 </div>
 
-                <!-- Validador de Cupons -->
-                <div class="validator-section">
-                    <h2 class="section-subtitle">Validar Cupom Específico</h2>
+                <!-- Tab: Cadastrar Embaixador -->
+                <div id="tab-cadastro" class="tab-content">
+                    <div class="form-card">
+                        <h2 class="section-subtitle">Cadastrar Novo Embaixador</h2>
+                        <p class="form-description">Preencha os dados do cliente que será embaixador da Box 73.</p>
 
-                    <div class="search-box">
-                        <input type="text" id="search-coupon" placeholder="Digite o código do cupom..."
-                            class="search-input">
-                        <button class="btn btn-primary" id="btn-validate">Validar</button>
+                        <div class="input-group">
+                            <label>Nome Completo *</label>
+                            <input type="text" id="register-name" placeholder="Ex: João da Silva" class="input-field">
+                        </div>
+
+                        <div class="input-group">
+                            <label>CPF *</label>
+                            <input type="text" id="register-cpf" placeholder="000.000.000-00" class="input-field" maxlength="14">
+                        </div>
+
+                        <div class="input-group">
+                            <label>Celular / WhatsApp *</label>
+                            <input type="tel" id="register-phone" placeholder="(00) 00000-0000" class="input-field" maxlength="15">
+                        </div>
+
+                        <div class="input-group">
+                            <label>Código do Cupom *</label>
+                            <div class="input-with-action">
+                                <input type="text" id="register-coupon" placeholder="Ex: JOAO73" class="input-field" style="text-transform: uppercase;">
+                                <button class="btn btn-secondary btn-sm" id="btn-generate-code">Gerar Auto</button>
+                            </div>
+                            <small class="input-hint">Cupom que o embaixador vai compartilhar</small>
+                        </div>
+
+                        <button class="btn btn-primary btn-large" id="btn-register">Cadastrar Embaixador</button>
                     </div>
+                </div>
 
-                    <div id="validation-result" class="validation-result" style="display: none;">
-                        <!-- Resultado da validação aparecerá aqui -->
+                <!-- Tab: Validar Cupom -->
+                <div id="tab-validar" class="tab-content">
+                    <div class="form-card">
+                        <h2 class="section-subtitle">Validar Cupom de Indicação</h2>
+                        <p class="form-description">Digite o código do cupom que o cliente apresentou.</p>
+
+                        <div class="search-box">
+                            <input type="text" id="search-coupon" placeholder="Digite o código do cupom..." class="search-input">
+                            <button class="btn btn-primary" id="btn-validate">Validar</button>
+                        </div>
+
+                        <div id="validation-result" class="validation-result" style="display: none;"></div>
+
+                        <div id="use-coupon-form" class="use-form" style="display: none;">
+                            <h3 class="section-subtitle">Registrar Uso do Cupom</h3>
+
+                            <div class="input-group">
+                                <label>Nome do Cliente Indicado *</label>
+                                <input type="text" id="indicado-name" placeholder="Nome completo" class="input-field">
+                            </div>
+
+                            <div class="input-group">
+                                <label>Telefone do Indicado</label>
+                                <input type="tel" id="indicado-phone" placeholder="(00) 00000-0000" class="input-field">
+                            </div>
+
+                            <div class="input-group">
+                                <label>Valor do Desconto (%)</label>
+                                <input type="number" id="discount-value" value="10" min="0" max="100" class="input-field">
+                            </div>
+
+                            <div class="input-group">
+                                <label>Serviço Realizado</label>
+                                <textarea id="observations" placeholder="Ex: Revisão completa, troca de óleo..." class="input-field" rows="3"></textarea>
+                            </div>
+
+                            <button class="btn btn-primary btn-large" id="btn-mark-used">✅ Confirmar e Registrar</button>
+                        </div>
                     </div>
+                </div>
 
-                    <!-- Form para marcar como usado -->
-                    <div id="use-coupon-form" class="use-form" style="display: none;">
-                        <h3 class="section-subtitle">Registrar Uso do Cupom</h3>
-
-                        <div class="input-group">
-                            <label>Nome do Cliente Indicado</label>
-                            <input type="text" id="indicado-name" placeholder="Nome completo" class="input-field">
-                        </div>
-
-                        <div class="input-group">
-                            <label>Telefone do Indicado</label>
-                            <input type="tel" id="indicado-phone" placeholder="(00) 00000-0000" class="input-field">
-                        </div>
-
-                        <div class="input-group">
-                            <label>Valor do Desconto (%)</label>
-                            <input type="number" id="discount-value" value="10" min="0" max="100" class="input-field">
-                        </div>
-
-                        <div class="input-group">
-                            <label>Observações (opcional)</label>
-                            <textarea id="observations" placeholder="Ex: Revisão completa, troca de óleo..."
-                                class="input-field" rows="3"></textarea>
-                        </div>
-
-                        <button class="btn btn-primary btn-large" id="btn-mark-used">Confirmar e Registrar Uso</button>
+                <!-- Link do cliente -->
+                <div class="client-link-banner">
+                    <p>📱 Link para clientes consultarem seus cupons:</p>
+                    <div class="link-display">
+                        <span id="client-link-url"></span>
+                        <button class="btn btn-secondary btn-sm" id="btn-copy-client-link">Copiar</button>
                     </div>
                 </div>
             </div>
         </section>
     </div>
 
-    <!-- Toast Notification -->
+    <!-- Toast -->
     <div id="toast" class="toast"></div>
 
-    <!-- Loading Overlay -->
+    <!-- Loading -->
     <div id="loading-overlay" class="loading-overlay" style="display: none;">
         <div class="spinner"></div>
     </div>
 
-    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="config.js"></script>
     <script src="app.js"></script>
