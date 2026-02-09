@@ -27,6 +27,13 @@ function initSupabase() {
         return;
     }
 
+    // Check if Supabase CDN loaded
+    if (typeof window.supabase === 'undefined' || !window.supabase.createClient) {
+        console.warn('Supabase CDN not loaded. Falling back to mock data.');
+        CONFIG.USE_MOCK_DATA = true;
+        return;
+    }
+
     try {
         supabase = window.supabase.createClient(
             CONFIG.SUPABASE_URL,
@@ -35,6 +42,7 @@ function initSupabase() {
         console.log('Supabase initialized successfully');
     } catch (error) {
         console.error('Failed to initialize Supabase:', error);
+        CONFIG.USE_MOCK_DATA = true;
         showToast('Erro ao conectar ao banco de dados. Usando dados de exemplo.', 'error');
     }
 }
