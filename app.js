@@ -124,50 +124,82 @@ function generateCode(name) {
 // Register Ambassador (Oficina cadastra)
 // ==========================================
 async function registerAmbassador(name, cpf, phone, couponCode) {
-    await loadData();
+    console.log('📝 registerAmbassador chamado:', { name, cpf, phone, couponCode });
+    
+    showLoading(true);
+    
+    try {
+        await loadData();
+        console.log('✅ Dados carregados. Total de embaixadores:', ambassadors.length);
 
-    const cleanedCPF = cleanCPF(cpf);
+        const cleanedCPF = cleanCPF(cpf);
+        console.log('🔍 CPF limpo:', cleanedCPF);
 
-    // Verificar CPF duplicado
-    if (ambassadors.some(a => cleanCPF(a.cpf) === cleanedCPF)) {
-        showToast('CPF já cadastrado!', 'error');
-        return false;
-    }
-
-    // Verificar código duplicado
-    const upperCode = couponCode.toUpperCase().trim();
-    if (ambassadors.some(a => a.codigo === upperCode)) {
-        showToast('Este código de cupom já existe! Escolha outro.', 'error');
-        return false;
-    }
-
-    const now = new Date().toISOString();
-
-    if (CONFIG.USE_MOCK_DATA) {
-        const newUser = { id: MOCK_DATA.ambassadors.length + 1, nome: name, cpf: cpf, telefone: phone, codigo: upperCode, data_cadastro: now };
-        MOCK_DATA.ambassadors.push(newUser);
-        ambassadors.push(newUser);
-    } else {
-        const { data, error } = await supabaseClient
-            .from('embaixadores')
-            .insert([{ nome: name, cpf: cpf, telefone: phone, codigo: upperCode, data_cadastro: now }])
-            .select()
-            .single();
-
-        if (error) {
-            console.error('Erro ao cadastrar:', error);
-            if (error.code === '23505') {
-                showToast('CPF ou cupom já cadastrado!', 'error');
-            } else {
-                showToast('Erro ao cadastrar. Tente novamente.', 'error');
-            }
+        // Verificar CPF duplicado
+        const cpfExists = ambassadors.some(a => cleanCPF(a.cpf || '') === cleanedCPF);
+        if (cpfExists) {
+            console.warn('⚠️ CPF já cadastrado');
+            showToast('CPF já cadastrado!', 'error');
             return false;
         }
-        ambassadors.push(data);
-    }
 
-    showToast('Embaixador cadastrado com sucesso! 🎉', 'success');
-    return true;
+        // Verificar código duplicado
+        const upperCode = couponCode.toUpperCase().trim();
+        const codeExists = ambassadors.some(a => a.codigo === upperCode);
+        if (codeExists) {
+            console.warn('⚠️ Código já existe:', upperCode);
+            showToast('Este código de cupom já existe! Escolha outro.', 'error');
+            return false;
+        }
+
+        const now = new Date().toISOString();
+
+        if (CONFIG.USE_MOCK_DATA) {
+            console.log('💾 Salvando em MOCK_DATA');
+            const newUser = { 
+                id: MOCK_DATA.ambassadors.length + 1, 
+                nome: name, 
+                cpf: cpf, 
+                telefone: phone, 
+                codigo: upperCode, 
+                data_cadastro: now 
+            };
+            MOCK_DATA.ambassadors.push(newUser);
+            ambassadors.push(newUser);
+            console.log('✅ Salvo em MOCK_DATA:', newUser);
+        } else {
+            console.log('🌐 Salvando no Supabase...');
+            const { data, error } = await supabaseClient
+                .from('embaixadores')
+                .insert([{ nome: name, cpf: cpf, telefone: phone, codigo: upperCode, data_cadastro: now }])
+                .select()
+                .single();
+
+            if (error) {
+                console.error('❌ Erro do Supabase:', error);
+                if (error.code === '23505') {
+                    showToast('CPF ou cupom já cadastrado!', 'error');
+                } else {
+                    showToast('Erro ao cadastrar: ' + (error.message || error), 'error');
+                }
+                return false;
+            }
+            
+            console.log('✅ Inserido no Supabase:', data);
+            ambassadors.push(data);
+        }
+
+        console.log('🎉 Cadastro concluído com sucesso!');
+        showToast('Embaixador cadastrado com sucesso! 🎉', 'success');
+        return true;
+
+    } catch (error) {
+        console.error('💥 Erro geral em registerAmbassador:', error);
+        showToast('Erro inesperado: ' + error.message, 'error');
+        return false;
+    } finally {
+        showLoading(false);
+    }
 }
 
 // ==========================================
@@ -434,28 +466,41 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Register ambassador
     document.getElementById('btn-register').addEventListener('click', async () => {
+        console.log('👆 Clicou em Cadastrar');
+        
         const name = document.getElementById('register-name').value.trim();
         const cpf = document.getElementById('register-cpf').value.trim();
         const phone = document.getElementById('register-phone').value.trim();
         const coupon = document.getElementById('register-coupon').value.trim();
 
+        console.log('📋 Dados preenchidos:', { name, cpf, phone, coupon });
+
         if (!name || !cpf || !phone || !coupon) {
+            console.warn('⚠️ Campos vazios');
             showToast('Preencha todos os campos obrigatórios', 'error');
             return;
         }
 
-        if (cleanCPF(cpf).length !== 11) {
+        const cleanedCPF = cleanCPF(cpf);
+        if (cleanedCPF.length !== 11) {
+            console.warn('⚠️ CPF inválido:', cleanedCPF);
             showToast('CPF inválido. Deve ter 11 dígitos.', 'error');
             return;
         }
 
+        console.log('✅ Validação OK. Chamando registerAmbassador...');
         const success = await registerAmbassador(name, cpf, phone, coupon);
+        
         if (success) {
+            console.log('🎉 Cadastro bem-sucedido. Limpando form...');
             document.getElementById('register-name').value = '';
             document.getElementById('register-cpf').value = '';
             document.getElementById('register-phone').value = '';
             document.getElementById('register-coupon').value = '';
+            console.log('📊 Abrindo dashboard...');
             switchTab('tab-dashboard');
+        } else {
+            console.log('❌ Cadastro falhou');
         }
     });
 
