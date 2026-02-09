@@ -471,29 +471,38 @@ async function validateCoupon(code) {
                 <div class="result-icon">✅</div>
                 <div class="result-message">
                     <h3>Cupom Válido</h3>
-                    <p>Este cupom pode ser utilizado</p>
+                    <p>Embaixador Encontrado</p>
                 </div>
             </div>
-            <div class="result-details">
+            
+            <div class="ambassador-highlight">
+                <div class="highlight-item">
+                    <span class="highlight-label">Embaixador</span>
+                    <span class="highlight-value big">${ambassador.nome}</span>
+                </div>
+                <div class="highlight-item">
+                    <span class="highlight-label">WhatsApp</span>
+                    <a href="https://wa.me/${ambassador.telefone.replace(/\D/g, '')}" target="_blank" class="highlight-value link">
+                        ${ambassador.telefone} 📱
+                    </a>
+                </div>
+            </div>
+
+            <div class="stats-highlight">
+                <div class="stat-box">
+                    <span class="stat-number">${totalUses}</span>
+                    <span class="stat-desc">Indicações Totais</span>
+                </div>
+                <div class="stat-box accent">
+                    <span class="stat-number">${settings.discount}%</span>
+                    <span class="stat-desc">Desconto do Cupom</span>
+                </div>
+            </div>
+
+            <div class="result-details collapsed">
                 <div class="detail-row">
                     <span class="detail-label">Código</span>
                     <span class="detail-value">${ambassador.codigo}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Embaixador</span>
-                    <span class="detail-value">${ambassador.nome}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Contato</span>
-                    <span class="detail-value">${ambassador.telefone}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Vezes Usado</span>
-                    <span class="detail-value">${totalUses}x</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Desconto</span>
-                    <span class="detail-value">${settings.discount}%</span>
                 </div>
             </div>
         `;
