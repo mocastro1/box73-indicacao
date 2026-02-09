@@ -1,6 +1,6 @@
 // ==========================================
-// Box 73 - Sistema de Indicação (Supabase Version)
-// Main Application Logic
+// Box 73 - Sistema de Indicação
+// Main Application Logic (Corrigido)
 // ==========================================
 
 // ==========================================
@@ -20,16 +20,14 @@ let settings = {
 // ==========================================
 let supabase = null;
 
-// Initialize Supabase
 function initSupabase() {
     if (CONFIG.USE_MOCK_DATA) {
-        console.log('Running in MOCK DATA mode');
+        console.log('Rodando em modo MOCK DATA');
         return;
     }
 
-    // Check if Supabase CDN loaded
     if (typeof window.supabase === 'undefined' || !window.supabase.createClient) {
-        console.warn('Supabase CDN not loaded. Falling back to mock data.');
+        console.warn('Supabase CDN não carregou. Usando mock data.');
         CONFIG.USE_MOCK_DATA = true;
         return;
     }
@@ -39,16 +37,16 @@ function initSupabase() {
             CONFIG.SUPABASE_URL,
             CONFIG.SUPABASE_ANON_KEY
         );
-        console.log('Supabase initialized successfully');
+        console.log('Supabase inicializado');
     } catch (error) {
-        console.error('Failed to initialize Supabase:', error);
+        console.error('Falha ao inicializar Supabase:', error);
         CONFIG.USE_MOCK_DATA = true;
-        showToast('Erro ao conectar ao banco de dados. Usando dados de exemplo.', 'error');
+        showToast('Erro ao conectar ao banco. Usando dados de exemplo.', 'error');
     }
 }
 
 // ==========================================
-// Mock Data (for testing without Supabase)
+// Mock Data (para testes sem Supabase)
 // ==========================================
 const MOCK_DATA = {
     ambassadors: [
@@ -107,53 +105,36 @@ const MOCK_DATA = {
 };
 
 // ==========================================
-// Data Loading & Processing
+// Data Loading
 // ==========================================
 async function loadData() {
     showLoading(true);
     try {
-        if (CONFIG.USE_MOCK_DATA || !supabase) {
-            ambassadors = MOCK_DATA.ambassadors;
-            referrals = MOCK_DATA.referrals;
-            console.log('Using mock data:', { ambassadors, referrals });
+        if (CONFIG.USE_MOCK_DATA) {
+            ambassadors = [...MOCK_DATA.ambassadors];
+            referrals = [...MOCK_DATA.referrals];
         } else {
-            // Load from Supabase
-            const { data: ambassadorData, error: ambassadorError } = await supabase
+            // Supabase: carregar embaixadores
+            const { data: ambData, error: ambError } = await supabase
                 .from('embaixadores')
                 .select('*');
+            if (ambError) throw ambError;
+            ambassadors = ambData || [];
 
-            if (ambassadorError) throw ambassadorError;
-            ambassadors = ambassadorData || [];
-
-            const { data: referralData, error: referralError } = await supabase
+            // Supabase: carregar indicações
+            const { data: refData, error: refError } = await supabase
                 .from('indicacoes')
                 .select('*');
-
-            if (referralError) throw referralError;
-            referrals = referralData || [];
-
-            // Load settings
-            const { data: settingsData, error: settingsError } = await supabase
-                .from('configuracoes')
-                .select('*');
-
-            if (settingsError) throw settingsError;
-
-            settingsData?.forEach(row => {
-                if (row.chave === 'desconto_percentual') {
-                    settings.discount = parseInt(row.valor) || CONFIG.DEFAULT_DISCOUNT;
-                } else if (row.chave === 'mensagem_whatsapp') {
-                    settings.whatsappMessage = row.valor || CONFIG.DEFAULT_WHATSAPP_MESSAGE;
-                }
-            });
-
-            console.log('Data loaded from Supabase:', { ambassadors, referrals, settings });
+            if (refError) throw refError;
+            referrals = refData || [];
         }
+        console.log('Dados carregados:', { ambassadors: ambassadors.length, referrals: referrals.length });
     } catch (error) {
-        console.error('Error loading data:', error);
+        console.error('Erro ao carregar dados:', error);
         showToast('Erro ao carregar dados. Usando dados de exemplo.', 'error');
-        ambassadors = MOCK_DATA.ambassadors;
-        referrals = MOCK_DATA.referrals;
+        // Fallback para mock
+        ambassadors = [...MOCK_DATA.ambassadors];
+        referrals = [...MOCK_DATA.referrals];
     } finally {
         showLoading(false);
     }
@@ -171,13 +152,11 @@ function generateCode(name) {
         .substring(0, 10);
 
     let code = cleanName + '73';
-
     let counter = 1;
     while (ambassadors.some(a => a.codigo === code)) {
         code = cleanName + '73' + counter;
         counter++;
     }
-
     return code;
 }
 
@@ -199,7 +178,7 @@ async function login(emailOrPhone) {
         showToast('Login realizado com sucesso!', 'success');
         return true;
     } else {
-        showToast('Usuário não encontrado', 'error');
+        showToast('Usuário não encontrado. Verifique email ou telefone.', 'error');
         return false;
     }
 }
@@ -215,44 +194,33 @@ async function register(name, email, phone) {
     const code = generateCode(name);
     const now = new Date().toISOString();
 
-    try {
-        if (CONFIG.USE_MOCK_DATA || !supabase) {
-            // Mock data
-            const newId = ambassadors.length + 1;
-            const newUser = {
-                id: newId,
-                nome: name,
-                email,
-                telefone: phone,
-                codigo: code,
-                data_cadastro: now
-            };
-            MOCK_DATA.ambassadors.push(newUser);
-            ambassadors.push(newUser);
-            currentUser = newUser;
-        } else {
-            // Supabase
-            const { data, error } = await supabase
-                .from('embaixadores')
-                .insert([{ nome: name, email, telefone: phone, codigo: code }])
-                .select();
+    if (CONFIG.USE_MOCK_DATA) {
+        const newId = MOCK_DATA.ambassadors.length + 1;
+        const newUser = { id: newId, nome: name, email, telefone: phone, codigo: code, data_cadastro: now };
+        MOCK_DATA.ambassadors.push(newUser);
+        ambassadors.push(newUser);
+        currentUser = newUser;
+    } else {
+        const { data, error } = await supabase
+            .from('embaixadores')
+            .insert([{ nome: name, email, telefone: phone, codigo: code, data_cadastro: now }])
+            .select()
+            .single();
 
-            if (error) throw error;
-
-            currentUser = data[0];
-            ambassadors.push(currentUser);
+        if (error) {
+            console.error('Erro ao cadastrar:', error);
+            showToast('Erro ao cadastrar. Tente novamente.', 'error');
+            return false;
         }
-
-        saveUserSession();
-        goToScreen('embaixador-dashboard');
-        loadDashboard();
-        showToast('Cadastro realizado com sucesso!', 'success');
-        return true;
-    } catch (error) {
-        console.error('Error registering:', error);
-        showToast('Erro ao criar conta: ' + error.message, 'error');
-        return false;
+        ambassadors.push(data);
+        currentUser = data;
     }
+
+    saveUserSession();
+    goToScreen('embaixador-dashboard');
+    loadDashboard();
+    showToast('Cadastro realizado com sucesso!', 'success');
+    return true;
 }
 
 function logout() {
@@ -271,9 +239,13 @@ function saveUserSession() {
 function loadUserSession() {
     const savedUser = localStorage.getItem('box73_user');
     if (savedUser) {
-        currentUser = JSON.parse(savedUser);
-        goToScreen('embaixador-dashboard');
-        loadDashboard();
+        try {
+            currentUser = JSON.parse(savedUser);
+            goToScreen('embaixador-dashboard');
+            loadDashboard();
+        } catch (e) {
+            localStorage.removeItem('box73_user');
+        }
     }
 }
 
@@ -285,10 +257,12 @@ async function loadDashboard() {
 
     await loadData();
 
+    // Atualizar info do usuário
     document.getElementById('user-name').textContent = currentUser.nome.split(' ')[0];
     document.getElementById('user-code').textContent = currentUser.codigo;
     document.getElementById('display-code').textContent = currentUser.codigo;
 
+    // Estatísticas
     const userReferrals = referrals.filter(r => r.codigo_usado === currentUser.codigo);
     const totalReferrals = userReferrals.length;
     const pendingReferrals = userReferrals.filter(r => r.status === 'Pendente').length;
@@ -298,11 +272,13 @@ async function loadDashboard() {
     document.getElementById('stat-pending').textContent = pendingReferrals;
     document.getElementById('stat-converted').textContent = convertedReferrals;
 
+    // Preview WhatsApp
     const message = settings.whatsappMessage
         .replace('{{CODE}}', currentUser.codigo)
         .replace('{{DISCOUNT}}', settings.discount);
     document.getElementById('whatsapp-preview').textContent = message;
 
+    // Lista de indicações
     loadReferralsList(userReferrals);
 }
 
@@ -349,9 +325,7 @@ function shareWhatsApp() {
         .replace('{{DISCOUNT}}', settings.discount);
 
     const encodedMessage = encodeURIComponent(message);
-    const whatsappUrl = `https://wa.me/?text=${encodedMessage}`;
-
-    window.open(whatsappUrl, '_blank');
+    window.open(`https://wa.me/?text=${encodedMessage}`, '_blank');
     showToast('Abrindo WhatsApp...', 'success');
 }
 
@@ -361,99 +335,25 @@ function copyCode() {
     navigator.clipboard.writeText(currentUser.codigo).then(() => {
         showToast('Código copiado!', 'success');
     }).catch(() => {
-        showToast('Erro ao copiar código', 'error');
+        // Fallback para navegadores que não suportam clipboard API
+        const textarea = document.createElement('textarea');
+        textarea.value = currentUser.codigo;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        showToast('Código copiado!', 'success');
     });
 }
 
 // ==========================================
-// Office Panel - Ambassadors List
-// ==========================================
-async function loadAmbassadorsList() {
-    await loadData();
-
-    const totalAmbassadors = ambassadors.length;
-    const totalReferrals = referrals.length;
-    const convertedReferrals = referrals.filter(r => r.status === 'Usado' || r.status === 'Validado').length;
-    const conversionRate = totalReferrals > 0 ? Math.round((convertedReferrals / totalReferrals) * 100) : 0;
-
-    document.getElementById('office-total-ambassadors').textContent = totalAmbassadors;
-    document.getElementById('office-total-referrals').textContent = totalReferrals;
-    document.getElementById('office-conversion-rate').textContent = conversionRate + '%';
-
-    const container = document.getElementById('ambassadors-list');
-
-    if (ambassadors.length === 0) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <div class="empty-state-icon">👥</div>
-                <p>Nenhum embaixador cadastrado ainda</p>
-            </div>
-        `;
-        return;
-    }
-
-    container.innerHTML = ambassadors.map(ambassador => {
-        const ambassadorReferrals = referrals.filter(r => r.codigo_usado === ambassador.codigo);
-        const totalUses = ambassadorReferrals.length;
-        const converted = ambassadorReferrals.filter(r => r.status === 'Usado' || r.status === 'Validado').length;
-        const pending = ambassadorReferrals.filter(r => r.status === 'Pendente').length;
-
-        return `
-            <div class="ambassador-card">
-                <div class="ambassador-header">
-                    <div class="ambassador-info">
-                        <h3 class="ambassador-name">${ambassador.nome}</h3>
-                        <div class="ambassador-meta">
-                            <span class="ambassador-code">Cupom: ${ambassador.codigo}</span>
-                            <a href="https://wa.me/${ambassador.telefone.replace(/\D/g, '')}" 
-                               target="_blank" 
-                               class="ambassador-phone">
-                                📱 ${ambassador.telefone}
-                            </a>
-                        </div>
-                    </div>
-                    <button class="btn btn-secondary btn-validate-quick" data-code="${ambassador.codigo}">
-                        Validar Cupom
-                    </button>
-                </div>
-                
-                <div class="ambassador-stats">
-                    <div class="mini-stat">
-                        <span class="mini-stat-value">${totalUses}</span>
-                        <span class="mini-stat-label">Total</span>
-                    </div>
-                    <div class="mini-stat success">
-                        <span class="mini-stat-value">${converted}</span>
-                        <span class="mini-stat-label">Convertidas</span>
-                    </div>
-                    <div class="mini-stat warning">
-                        <span class="mini-stat-value">${pending}</span>
-                        <span class="mini-stat-label">Pendentes</span>
-                    </div>
-                </div>
-            </div>
-        `;
-    }).join('');
-
-    document.querySelectorAll('.btn-validate-quick').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const code = e.target.dataset.code;
-            document.getElementById('search-coupon').value = code;
-            validateCoupon(code);
-            document.querySelector('.validator-section').scrollIntoView({ behavior: 'smooth' });
-        });
-    });
-}
-
-// ==========================================
-// Oficina - Coupon Validation
+// Oficina - Validação de Cupons
 // ==========================================
 async function validateCoupon(code) {
     await loadData();
 
     const upperCode = code.toUpperCase().trim();
     const ambassador = ambassadors.find(a => a.codigo === upperCode);
-
     const resultDiv = document.getElementById('validation-result');
 
     if (ambassador) {
@@ -467,7 +367,7 @@ async function validateCoupon(code) {
                 <div class="result-icon">✅</div>
                 <div class="result-message">
                     <h3>Cupom Válido</h3>
-                    <p>Embaixador Encontrado</p>
+                    <p>Embaixador encontrado</p>
                 </div>
             </div>
             
@@ -478,7 +378,7 @@ async function validateCoupon(code) {
                 </div>
                 <div class="highlight-item">
                     <span class="highlight-label">WhatsApp</span>
-                    <a href="https://wa.me/${ambassador.telefone.replace(/\D/g, '')}" target="_blank" class="highlight-value link">
+                    <a href="https://wa.me/55${ambassador.telefone.replace(/\D/g, '')}" target="_blank" class="highlight-value link">
                         ${ambassador.telefone} 📱
                     </a>
                 </div>
@@ -492,13 +392,6 @@ async function validateCoupon(code) {
                 <div class="stat-box accent">
                     <span class="stat-number">${settings.discount}%</span>
                     <span class="stat-desc">Desconto do Cupom</span>
-                </div>
-            </div>
-
-            <div class="result-details collapsed">
-                <div class="detail-row">
-                    <span class="detail-label">Código</span>
-                    <span class="detail-value">${ambassador.codigo}</span>
                 </div>
             </div>
         `;
@@ -517,7 +410,6 @@ async function validateCoupon(code) {
                 </div>
             </div>
         `;
-
         document.getElementById('use-coupon-form').style.display = 'none';
     }
 }
@@ -536,56 +428,98 @@ async function markCouponAsUsed() {
     }
 
     const now = new Date().toISOString();
+    const newReferral = {
+        codigo_usado: code,
+        nome_indicado: indicadoName,
+        telefone_indicado: indicadoPhone,
+        data_indicacao: now,
+        status: 'Usado',
+        valor_desconto: parseInt(discountValue) || settings.discount,
+        data_uso: now,
+        observacoes: observations
+    };
 
-    try {
-        if (CONFIG.USE_MOCK_DATA || !supabase) {
-            // Mock data
-            const newId = referrals.length + 1;
-            MOCK_DATA.referrals.push({
-                id: newId,
-                codigo_usado: code,
-                nome_indicado: indicadoName,
-                telefone_indicado: indicadoPhone,
-                data_indicacao: now,
-                status: 'Usado',
-                valor_desconto: discountValue,
-                data_uso: now,
-                observacoes: observations
-            });
-            referrals.push(MOCK_DATA.referrals[MOCK_DATA.referrals.length - 1]);
-        } else {
-            // Supabase
-            const { error } = await supabase
-                .from('indicacoes')
-                .insert([{
-                    codigo_usado: code,
-                    nome_indicado: indicadoName,
-                    telefone_indicado: indicadoPhone,
-                    status: 'Usado',
-                    valor_desconto: parseFloat(discountValue),
-                    data_uso: now,
-                    observacoes: observations
-                }]);
+    if (CONFIG.USE_MOCK_DATA) {
+        newReferral.id = MOCK_DATA.referrals.length + 1;
+        MOCK_DATA.referrals.push(newReferral);
+        referrals.push(newReferral);
+    } else {
+        const { data, error } = await supabase
+            .from('indicacoes')
+            .insert([newReferral])
+            .select()
+            .single();
 
-            if (error) throw error;
+        if (error) {
+            console.error('Erro ao registrar uso:', error);
+            showToast('Erro ao registrar. Tente novamente.', 'error');
+            return;
         }
-
-        showToast('Cupom registrado com sucesso!', 'success');
-
-        // Clear form
-        document.getElementById('indicado-name').value = '';
-        document.getElementById('indicado-phone').value = '';
-        document.getElementById('observations').value = '';
-        document.getElementById('search-coupon').value = '';
-        document.getElementById('validation-result').style.display = 'none';
-        document.getElementById('use-coupon-form').style.display = 'none';
-
-        // Reload ambassador list
-        loadAmbassadorsList();
-    } catch (error) {
-        console.error('Error marking coupon as used:', error);
-        showToast('Erro ao registrar cupom: ' + error.message, 'error');
+        referrals.push(data);
     }
+
+    showToast('Cupom registrado com sucesso!', 'success');
+
+    // Limpar form
+    document.getElementById('indicado-name').value = '';
+    document.getElementById('indicado-phone').value = '';
+    document.getElementById('observations').value = '';
+    document.getElementById('search-coupon').value = '';
+    document.getElementById('validation-result').style.display = 'none';
+    document.getElementById('use-coupon-form').style.display = 'none';
+
+    // Recarregar painel
+    loadOficinaDashboard();
+}
+
+// ==========================================
+// Oficina Dashboard
+// ==========================================
+async function loadOficinaDashboard() {
+    await loadData();
+
+    const totalAmbassadors = ambassadors.length;
+    const totalReferrals = referrals.length;
+    const convertedReferrals = referrals.filter(r => r.status === 'Usado' || r.status === 'Validado').length;
+    const conversionRate = totalReferrals > 0 ? Math.round((convertedReferrals / totalReferrals) * 100) : 0;
+
+    // Atualizar stats da oficina
+    const elTotalAmb = document.getElementById('office-total-ambassadors');
+    const elTotalRef = document.getElementById('office-total-referrals');
+    const elConvRate = document.getElementById('office-conversion-rate');
+
+    if (elTotalAmb) elTotalAmb.textContent = totalAmbassadors;
+    if (elTotalRef) elTotalRef.textContent = totalReferrals;
+    if (elConvRate) elConvRate.textContent = conversionRate + '%';
+
+    // Lista de embaixadores
+    const container = document.getElementById('ambassadors-list');
+    if (!container) return;
+
+    if (ambassadors.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">👥</div>
+                <p>Nenhum embaixador cadastrado ainda</p>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = ambassadors.map(amb => {
+        const ambReferrals = referrals.filter(r => r.codigo_usado === amb.codigo);
+        const date = new Date(amb.data_cadastro).toLocaleDateString('pt-BR');
+
+        return `
+            <div class="ambassador-item">
+                <div class="ambassador-info">
+                    <h3>${amb.nome}</h3>
+                    <p>${amb.telefone} · ${ambReferrals.length} indicação(ões) · Desde ${date}</p>
+                </div>
+                <span class="ambassador-code">${amb.codigo}</span>
+            </div>
+        `;
+    }).join('');
 }
 
 // ==========================================
@@ -593,11 +527,14 @@ async function markCouponAsUsed() {
 // ==========================================
 function goToScreen(screenId) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    document.getElementById(screenId).classList.add('active');
-    currentScreen = screenId;
+    const target = document.getElementById(screenId);
+    if (target) {
+        target.classList.add('active');
+        currentScreen = screenId;
+    }
 
     if (screenId === 'oficina-panel') {
-        loadAmbassadorsList();
+        loadOficinaDashboard();
     }
 }
 
@@ -607,8 +544,7 @@ function goToScreen(screenId) {
 function showToast(message, type = 'success') {
     const toast = document.getElementById('toast');
     toast.textContent = message;
-    toast.className = `toast ${type}`;
-    toast.classList.add('show');
+    toast.className = `toast ${type} show`;
 
     setTimeout(() => {
         toast.classList.remove('show');
@@ -616,14 +552,17 @@ function showToast(message, type = 'success') {
 }
 
 function showLoading(show) {
-    document.getElementById('loading-overlay').style.display = show ? 'flex' : 'none';
+    const overlay = document.getElementById('loading-overlay');
+    if (overlay) {
+        overlay.style.display = show ? 'flex' : 'none';
+    }
 }
 
 // ==========================================
 // Event Listeners
 // ==========================================
 document.addEventListener('DOMContentLoaded', () => {
-    // Initialize Supabase
+    // Inicializar Supabase
     initSupabase();
 
     // Landing page
@@ -701,8 +640,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.key === 'Enter') document.getElementById('btn-validate').click();
     });
 
-    // Load saved session
+    // Carregar sessão salva
     loadUserSession();
 
-    console.log('Box 73 Sistema de Indicação initialized with Supabase');
+    console.log('Box 73 - Sistema de Indicação inicializado');
 });
