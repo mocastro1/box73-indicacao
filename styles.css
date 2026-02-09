@@ -724,6 +724,119 @@ body {
 }
 
 /* ==========================================
+   Oficina Panel - Ambassador List
+   ========================================== */
+.ambassadors-overview {
+    margin-bottom: var(--spacing-2xl);
+}
+
+.ambassadors-list {
+    display: grid;
+    gap: var(--spacing-lg);
+}
+
+.ambassador-card {
+    background: var(--color-gray-900);
+    border: 1px solid var(--color-gray-800);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    transition: all var(--transition-base);
+}
+
+.ambassador-card:hover {
+    border-color: var(--color-orange);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.ambassador-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: var(--spacing-md);
+    gap: var(--spacing-md);
+}
+
+.ambassador-info {
+    flex: 1;
+}
+
+.ambassador-name {
+    font-size: var(--font-size-xl);
+    font-weight: 700;
+    margin-bottom: var(--spacing-xs);
+    color: var(--color-white);
+}
+
+.ambassador-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
+    font-size: var(--font-size-sm);
+}
+
+.ambassador-code {
+    color: var(--color-orange);
+    font-weight: 600;
+    font-family: 'Courier New', monospace;
+}
+
+.ambassador-phone {
+    color: var(--color-gray-300);
+    text-decoration: none;
+    transition: color var(--transition-base);
+}
+
+.ambassador-phone:hover {
+    color: var(--color-orange);
+}
+
+.ambassador-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-md);
+}
+
+.mini-stat {
+    text-align: center;
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--color-gray-800);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-gray-700);
+}
+
+.mini-stat.success {
+    background: rgba(16, 185, 129, 0.1);
+    border-color: var(--color-success);
+}
+
+.mini-stat.warning {
+    background: rgba(251, 191, 36, 0.1);
+    border-color: #fbbf24;
+}
+
+.mini-stat-value {
+    display: block;
+    font-size: var(--font-size-xl);
+    font-weight: 800;
+    color: var(--color-white);
+    line-height: 1.2;
+}
+
+.mini-stat-label {
+    display: block;
+    font-size: var(--font-size-xs);
+    color: var(--color-gray-400);
+    margin-top: var(--spacing-xs);
+}
+
+.btn-validate-quick {
+    white-space: nowrap;
+    padding: var(--spacing-sm) var(--spacing-md);
+}
+
+/* ==========================================
    Toast Notifications
    ========================================== */
 .toast {
@@ -817,6 +930,19 @@ body {
 
     .stats-highlight {
         grid-template-columns: 1fr;
+    }
+
+    .ambassador-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .btn-validate-quick {
+        width: 100%;
+    }
+
+    .ambassador-stats {
+        grid-template-columns: repeat(3, 1fr);
     }
 
     .dashboard-header {

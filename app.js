@@ -569,8 +569,91 @@ async function markCouponAsUsed() {
     document.getElementById('validation-result').style.display = 'none';
     document.getElementById('use-coupon-form').style.display = 'none';
 
-    // Reload admin stats
-    loadAdminDashboard();
+    // Reload ambassador list
+    loadAmbassadorsList();
+}
+
+// ==========================================
+// Office Panel - Ambassadors List
+// ==========================================
+async function loadAmbassadorsList() {
+    await loadData();
+
+    const totalAmbassadors = ambassadors.length;
+    const totalReferrals = referrals.length;
+    const convertedReferrals = referrals.filter(r => r.status === 'Usado' || r.status === 'Validado').length;
+    const conversionRate = totalReferrals > 0 ? Math.round((convertedReferrals / totalReferrals) * 100) : 0;
+
+    document.getElementById('office-total-ambassadors').textContent = totalAmbassadors;
+    document.getElementById('office-total-referrals').textContent = totalReferrals;
+    document.getElementById('office-conversion-rate').textContent = conversionRate + '%';
+
+    const container = document.getElementById('ambassadors-list');
+
+    if (ambassadors.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">👥</div>
+                <p>Nenhum embaixador cadastrado ainda</p>
+            </div>
+        `;
+        return;
+    }
+
+    // Create ambassador cards with stats
+    container.innerHTML = ambassadors.map(ambassador => {
+        const ambassadorReferrals = referrals.filter(r => r.codigo_usado === ambassador.codigo);
+        const totalUses = ambassadorReferrals.length;
+        const converted = ambassadorReferrals.filter(r => r.status === 'Usado' || r.status === 'Validado').length;
+        const pending = ambassadorReferrals.filter(r => r.status === 'Pendente').length;
+
+        return `
+            <div class="ambassador-card">
+                <div class="ambassador-header">
+                    <div class="ambassador-info">
+                        <h3 class="ambassador-name">${ambassador.nome}</h3>
+                        <div class="ambassador-meta">
+                            <span class="ambassador-code">Cupom: ${ambassador.codigo}</span>
+                            <a href="https://wa.me/${ambassador.telefone.replace(/\D/g, '')}" 
+                               target="_blank" 
+                               class="ambassador-phone">
+                                📱 ${ambassador.telefone}
+                            </a>
+                        </div>
+                    </div>
+                    <button class="btn btn-secondary btn-validate-quick" data-code="${ambassador.codigo}">
+                        Validar Cupom
+                    </button>
+                </div>
+                
+                <div class="ambassador-stats">
+                    <div class="mini-stat">
+                        <span class="mini-stat-value">${totalUses}</span>
+                        <span class="mini-stat-label">Total</span>
+                    </div>
+                    <div class="mini-stat success">
+                        <span class="mini-stat-value">${converted}</span>
+                        <span class="mini-stat-label">Convertidas</span>
+                    </div>
+                    <div class="mini-stat warning">
+                        <span class="mini-stat-value">${pending}</span>
+                        <span class="mini-stat-label">Pendentes</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    // Add click handlers for quick validate buttons
+    document.querySelectorAll('.btn-validate-quick').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const code = e.target.dataset.code;
+            document.getElementById('search-coupon').value = code;
+            validateCoupon(code);
+            // Scroll to validation section
+            document.querySelector('.validator-section').scrollIntoView({ behavior: 'smooth' });
+        });
+    });
 }
 
 // ==========================================
@@ -633,7 +716,7 @@ function goToScreen(screenId) {
 
     // Load data for specific screens
     if (screenId === 'oficina-panel') {
-        loadAdminDashboard();
+        loadAmbassadorsList();
     }
 }
 
