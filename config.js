@@ -1,31 +1,17 @@
 // ==========================================
-// Box 73 - Configuration
+// Box 73 - Configuration (Supabase Version)
 // ==========================================
 
 const CONFIG = {
-    // Google Sheets API Configuration
-    // TODO: Replace with your actual credentials when ready
-    GOOGLE_API_KEY: 'YOUR_GOOGLE_API_KEY_HERE',
-    SPREADSHEET_ID: 'YOUR_SPREADSHEET_ID_HERE',
+    // Supabase Configuration
+    // For development, using mock data
+    SUPABASE_URL: 'YOUR_SUPABASE_PROJECT_URL',
+    SUPABASE_ANON_KEY: 'YOUR_SUPABASE_ANON_KEY',
 
-    // Sheet Names (must match exactly)
-    SHEET_EMBAIXADORES: 'Embaixadores',
-    SHEET_INDICACOES: 'Indicacoes',
-    SHEET_CONFIGURACOES: 'Configuracoes',
-
-    // Default Settings
+    // Application Settings
     DEFAULT_DISCOUNT: 10,
-    DEFAULT_WHATSAPP_MESSAGE: `🏍️ Oi! Conhece a Box 73?
+    DEFAULT_WHATSAPP_MESSAGE: 'Oi! Estou indicando a Box 73 pra você! 🏍️ Use meu cupom {{CODE}} e ganhe {{DISCOUNT}}% de desconto na sua próxima revisão! 🔧',
 
-É a melhor oficina de motos que já usei!
-
-Use meu cupom *{{CODE}}* e ganhe {{DISCOUNT}}% de desconto no seu primeiro serviço!
-
-📍 Instagram: @box73br`,
-
-    // Instagram
-    INSTAGRAM_URL: 'https://www.instagram.com/box73br/',
-
-    // App Settings
-    USE_MOCK_DATA: true, // Set to false when Google Sheets is configured
+    // Development Mode - set to false when you have Supabase configured
+    USE_MOCK_DATA: true
 };

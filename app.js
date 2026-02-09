@@ -1,5 +1,5 @@
 // ==========================================
-// Box 73 - Sistema de Indicação
+// Box 73 - Sistema de Indicação (Supabase Version)
 // Main Application Logic
 // ==========================================
 
@@ -16,7 +16,31 @@ let settings = {
 };
 
 // ==========================================
-// Mock Data (for testing without Google Sheets)
+// Supabase Client
+// ==========================================
+let supabase = null;
+
+// Initialize Supabase
+function initSupabase() {
+    if (CONFIG.USE_MOCK_DATA) {
+        console.log('Running in MOCK DATA mode');
+        return;
+    }
+
+    try {
+        supabase = window.supabase.createClient(
+            CONFIG.SUPABASE_URL,
+            CONFIG.SUPABASE_ANON_KEY
+        );
+        console.log('Supabase initialized successfully');
+    } catch (error) {
+        console.error('Failed to initialize Supabase:', error);
+        showToast('Erro ao conectar ao banco de dados. Usando dados de exemplo.', 'error');
+    }
+}
+
+// ==========================================
+// Mock Data (for testing without Supabase)
 // ==========================================
 const MOCK_DATA = {
     ambassadors: [
@@ -75,183 +99,53 @@ const MOCK_DATA = {
 };
 
 // ==========================================
-// Google Sheets Integration
-// ==========================================
-class SheetsAPI {
-    constructor() {
-        this.baseUrl = 'https://sheets.googleapis.com/v4/spreadsheets';
-        this.apiKey = CONFIG.GOOGLE_API_KEY;
-        this.spreadsheetId = CONFIG.SPREADSHEET_ID;
-    }
-
-    async getRange(sheetName, range) {
-        if (CONFIG.USE_MOCK_DATA) {
-            return this.getMockData(sheetName);
-        }
-
-        const url = `${this.baseUrl}/${this.spreadsheetId}/values/${sheetName}!${range}?key=${this.apiKey}`;
-        try {
-            const response = await fetch(url);
-            if (!response.ok) throw new Error('Failed to fetch data');
-            const data = await response.json();
-            return data.values || [];
-        } catch (error) {
-            console.error('Error fetching from Sheets:', error);
-            showToast('Erro ao carregar dados. Usando dados de exemplo.', 'error');
-            return this.getMockData(sheetName);
-        }
-    }
-
-    async appendRow(sheetName, values) {
-        if (CONFIG.USE_MOCK_DATA) {
-            return this.appendMockData(sheetName, values);
-        }
-
-        const url = `${this.baseUrl}/${this.spreadsheetId}/values/${sheetName}!A:Z:append?valueInputOption=RAW&key=${this.apiKey}`;
-        try {
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ values: [values] })
-            });
-            if (!response.ok) throw new Error('Failed to append data');
-            return await response.json();
-        } catch (error) {
-            console.error('Error appending to Sheets:', error);
-            return this.appendMockData(sheetName, values);
-        }
-    }
-
-    async updateRow(sheetName, row, values) {
-        if (CONFIG.USE_MOCK_DATA) {
-            return this.updateMockData(sheetName, row, values);
-        }
-
-        const range = `${sheetName}!A${row}:Z${row}`;
-        const url = `${this.baseUrl}/${this.spreadsheetId}/values/${range}?valueInputOption=RAW&key=${this.apiKey}`;
-        try {
-            const response = await fetch(url, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ values: [values] })
-            });
-            if (!response.ok) throw new Error('Failed to update data');
-            return await response.json();
-        } catch (error) {
-            console.error('Error updating Sheets:', error);
-            return this.updateMockData(sheetName, row, values);
-        }
-    }
-
-    getMockData(sheetName) {
-        if (sheetName === CONFIG.SHEET_EMBAIXADORES) {
-            return [
-                ['ID', 'Nome', 'Email', 'Telefone', 'Codigo', 'Data_Cadastro'],
-                ...MOCK_DATA.ambassadors.map(a => [
-                    a.id, a.nome, a.email, a.telefone, a.codigo, a.data_cadastro
-                ])
-            ];
-        } else if (sheetName === CONFIG.SHEET_INDICACOES) {
-            return [
-                ['ID', 'Codigo_Usado', 'Nome_Indicado', 'Telefone_Indicado', 'Data_Indicacao', 'Status', 'Valor_Desconto', 'Data_Uso', 'Observacoes'],
-                ...MOCK_DATA.referrals.map(r => [
-                    r.id, r.codigo_usado, r.nome_indicado, r.telefone_indicado,
-                    r.data_indicacao, r.status, r.valor_desconto, r.data_uso, r.observacoes
-                ])
-            ];
-        } else if (sheetName === CONFIG.SHEET_CONFIGURACOES) {
-            return [
-                ['Chave', 'Valor'],
-                ['desconto_percentual', CONFIG.DEFAULT_DISCOUNT],
-                ['mensagem_whatsapp', CONFIG.DEFAULT_WHATSAPP_MESSAGE]
-            ];
-        }
-        return [];
-    }
-
-    appendMockData(sheetName, values) {
-        console.log('Mock append to', sheetName, ':', values);
-        if (sheetName === CONFIG.SHEET_EMBAIXADORES) {
-            const newId = MOCK_DATA.ambassadors.length + 1;
-            MOCK_DATA.ambassadors.push({
-                id: newId,
-                nome: values[1],
-                email: values[2],
-                telefone: values[3],
-                codigo: values[4],
-                data_cadastro: values[5]
-            });
-        } else if (sheetName === CONFIG.SHEET_INDICACOES) {
-            const newId = MOCK_DATA.referrals.length + 1;
-            MOCK_DATA.referrals.push({
-                id: newId,
-                codigo_usado: values[1],
-                nome_indicado: values[2],
-                telefone_indicado: values[3],
-                data_indicacao: values[4],
-                status: values[5],
-                valor_desconto: values[6],
-                data_uso: values[7],
-                observacoes: values[8]
-            });
-        }
-        return { success: true };
-    }
-
-    updateMockData(sheetName, row, values) {
-        console.log('Mock update', sheetName, 'row', row, ':', values);
-        // For mock data, we'll just log the update
-        return { success: true };
-    }
-}
-
-const sheets = new SheetsAPI();
-
-// ==========================================
 // Data Loading & Processing
 // ==========================================
 async function loadData() {
     showLoading(true);
     try {
-        // Load ambassadors
-        const ambassadorData = await sheets.getRange(CONFIG.SHEET_EMBAIXADORES, 'A:F');
-        ambassadors = ambassadorData.slice(1).map(row => ({
-            id: row[0],
-            nome: row[1],
-            email: row[2],
-            telefone: row[3],
-            codigo: row[4],
-            data_cadastro: row[5]
-        }));
+        if (CONFIG.USE_MOCK_DATA || !supabase) {
+            ambassadors = MOCK_DATA.ambassadors;
+            referrals = MOCK_DATA.referrals;
+            console.log('Using mock data:', { ambassadors, referrals });
+        } else {
+            // Load from Supabase
+            const { data: ambassadorData, error: ambassadorError } = await supabase
+                .from('embaixadores')
+                .select('*');
 
-        // Load referrals
-        const referralData = await sheets.getRange(CONFIG.SHEET_INDICACOES, 'A:I');
-        referrals = referralData.slice(1).map(row => ({
-            id: row[0],
-            codigo_usado: row[1],
-            nome_indicado: row[2],
-            telefone_indicado: row[3],
-            data_indicacao: row[4],
-            status: row[5],
-            valor_desconto: row[6],
-            data_uso: row[7],
-            observacoes: row[8]
-        }));
+            if (ambassadorError) throw ambassadorError;
+            ambassadors = ambassadorData || [];
 
-        // Load settings
-        const settingsData = await sheets.getRange(CONFIG.SHEET_CONFIGURACOES, 'A:B');
-        settingsData.slice(1).forEach(row => {
-            if (row[0] === 'desconto_percentual') {
-                settings.discount = parseInt(row[1]) || CONFIG.DEFAULT_DISCOUNT;
-            } else if (row[0] === 'mensagem_whatsapp') {
-                settings.whatsappMessage = row[1] || CONFIG.DEFAULT_WHATSAPP_MESSAGE;
-            }
-        });
+            const { data: referralData, error: referralError } = await supabase
+                .from('indicacoes')
+                .select('*');
 
-        console.log('Data loaded:', { ambassadors, referrals, settings });
+            if (referralError) throw referralError;
+            referrals = referralData || [];
+
+            // Load settings
+            const { data: settingsData, error: settingsError } = await supabase
+                .from('configuracoes')
+                .select('*');
+
+            if (settingsError) throw settingsError;
+
+            settingsData?.forEach(row => {
+                if (row.chave === 'desconto_percentual') {
+                    settings.discount = parseInt(row.valor) || CONFIG.DEFAULT_DISCOUNT;
+                } else if (row.chave === 'mensagem_whatsapp') {
+                    settings.whatsappMessage = row.valor || CONFIG.DEFAULT_WHATSAPP_MESSAGE;
+                }
+            });
+
+            console.log('Data loaded from Supabase:', { ambassadors, referrals, settings });
+        }
     } catch (error) {
         console.error('Error loading data:', error);
-        showToast('Erro ao carregar dados', 'error');
+        showToast('Erro ao carregar dados. Usando dados de exemplo.', 'error');
+        ambassadors = MOCK_DATA.ambassadors;
+        referrals = MOCK_DATA.referrals;
     } finally {
         showLoading(false);
     }
@@ -261,17 +155,15 @@ async function loadData() {
 // Code Generation
 // ==========================================
 function generateCode(name) {
-    // Generate unique code based on name + 73 + random number
     const cleanName = name
         .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '') // Remove accents
+        .replace(/[\u0300-\u036f]/g, '')
         .toUpperCase()
         .replace(/[^A-Z]/g, '')
         .substring(0, 10);
 
     let code = cleanName + '73';
 
-    // Check if code exists, add number if needed
     let counter = 1;
     while (ambassadors.some(a => a.codigo === code)) {
         code = cleanName + '73' + counter;
@@ -307,31 +199,52 @@ async function login(emailOrPhone) {
 async function register(name, email, phone) {
     await loadData();
 
-    // Check if user already exists
     if (ambassadors.some(a => a.email === email || a.telefone === phone)) {
         showToast('Email ou telefone já cadastrado', 'error');
         return false;
     }
 
-    const newId = ambassadors.length + 1;
     const code = generateCode(name);
     const now = new Date().toISOString();
 
-    // Add to sheet
-    await sheets.appendRow(CONFIG.SHEET_EMBAIXADORES, [
-        newId, name, email, phone, code, now
-    ]);
+    try {
+        if (CONFIG.USE_MOCK_DATA || !supabase) {
+            // Mock data
+            const newId = ambassadors.length + 1;
+            const newUser = {
+                id: newId,
+                nome: name,
+                email,
+                telefone: phone,
+                codigo: code,
+                data_cadastro: now
+            };
+            MOCK_DATA.ambassadors.push(newUser);
+            ambassadors.push(newUser);
+            currentUser = newUser;
+        } else {
+            // Supabase
+            const { data, error } = await supabase
+                .from('embaixadores')
+                .insert([{ nome: name, email, telefone: phone, codigo: code }])
+                .select();
 
-    // Update local data
-    const newUser = { id: newId, nome: name, email, telefone: phone, codigo: code, data_cadastro: now };
-    ambassadors.push(newUser);
-    currentUser = newUser;
+            if (error) throw error;
 
-    saveUserSession();
-    goToScreen('embaixador-dashboard');
-    loadDashboard();
-    showToast('Cadastro realizado com sucesso!', 'success');
-    return true;
+            currentUser = data[0];
+            ambassadors.push(currentUser);
+        }
+
+        saveUserSession();
+        goToScreen('embaixador-dashboard');
+        loadDashboard();
+        showToast('Cadastro realizado com sucesso!', 'success');
+        return true;
+    } catch (error) {
+        console.error('Error registering:', error);
+        showToast('Erro ao criar conta: ' + error.message, 'error');
+        return false;
+    }
 }
 
 function logout() {
@@ -364,12 +277,10 @@ async function loadDashboard() {
 
     await loadData();
 
-    // Update user info
     document.getElementById('user-name').textContent = currentUser.nome.split(' ')[0];
     document.getElementById('user-code').textContent = currentUser.codigo;
     document.getElementById('display-code').textContent = currentUser.codigo;
 
-    // Calculate stats
     const userReferrals = referrals.filter(r => r.codigo_usado === currentUser.codigo);
     const totalReferrals = userReferrals.length;
     const pendingReferrals = userReferrals.filter(r => r.status === 'Pendente').length;
@@ -379,13 +290,11 @@ async function loadDashboard() {
     document.getElementById('stat-pending').textContent = pendingReferrals;
     document.getElementById('stat-converted').textContent = convertedReferrals;
 
-    // Update WhatsApp message preview
     const message = settings.whatsappMessage
         .replace('{{CODE}}', currentUser.codigo)
         .replace('{{DISCOUNT}}', settings.discount);
     document.getElementById('whatsapp-preview').textContent = message;
 
-    // Load referrals list
     loadReferralsList(userReferrals);
 }
 
@@ -402,7 +311,6 @@ function loadReferralsList(userReferrals) {
         return;
     }
 
-    // Sort by date (newest first)
     userReferrals.sort((a, b) => new Date(b.data_indicacao) - new Date(a.data_indicacao));
 
     container.innerHTML = userReferrals.map(ref => {
@@ -446,6 +354,86 @@ function copyCode() {
         showToast('Código copiado!', 'success');
     }).catch(() => {
         showToast('Erro ao copiar código', 'error');
+    });
+}
+
+// ==========================================
+// Office Panel - Ambassadors List
+// ==========================================
+async function loadAmbassadorsList() {
+    await loadData();
+
+    const totalAmbassadors = ambassadors.length;
+    const totalReferrals = referrals.length;
+    const convertedReferrals = referrals.filter(r => r.status === 'Usado' || r.status === 'Validado').length;
+    const conversionRate = totalReferrals > 0 ? Math.round((convertedReferrals / totalReferrals) * 100) : 0;
+
+    document.getElementById('office-total-ambassadors').textContent = totalAmbassadors;
+    document.getElementById('office-total-referrals').textContent = totalReferrals;
+    document.getElementById('office-conversion-rate').textContent = conversionRate + '%';
+
+    const container = document.getElementById('ambassadors-list');
+
+    if (ambassadors.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">👥</div>
+                <p>Nenhum embaixador cadastrado ainda</p>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = ambassadors.map(ambassador => {
+        const ambassadorReferrals = referrals.filter(r => r.codigo_usado === ambassador.codigo);
+        const totalUses = ambassadorReferrals.length;
+        const converted = ambassadorReferrals.filter(r => r.status === 'Usado' || r.status === 'Validado').length;
+        const pending = ambassadorReferrals.filter(r => r.status === 'Pendente').length;
+
+        return `
+            <div class="ambassador-card">
+                <div class="ambassador-header">
+                    <div class="ambassador-info">
+                        <h3 class="ambassador-name">${ambassador.nome}</h3>
+                        <div class="ambassador-meta">
+                            <span class="ambassador-code">Cupom: ${ambassador.codigo}</span>
+                            <a href="https://wa.me/${ambassador.telefone.replace(/\D/g, '')}" 
+                               target="_blank" 
+                               class="ambassador-phone">
+                                📱 ${ambassador.telefone}
+                            </a>
+                        </div>
+                    </div>
+                    <button class="btn btn-secondary btn-validate-quick" data-code="${ambassador.codigo}">
+                        Validar Cupom
+                    </button>
+                </div>
+                
+                <div class="ambassador-stats">
+                    <div class="mini-stat">
+                        <span class="mini-stat-value">${totalUses}</span>
+                        <span class="mini-stat-label">Total</span>
+                    </div>
+                    <div class="mini-stat success">
+                        <span class="mini-stat-value">${converted}</span>
+                        <span class="mini-stat-label">Convertidas</span>
+                    </div>
+                    <div class="mini-stat warning">
+                        <span class="mini-stat-value">${pending}</span>
+                        <span class="mini-stat-label">Pendentes</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    document.querySelectorAll('.btn-validate-quick').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const code = e.target.dataset.code;
+            document.getElementById('search-coupon').value = code;
+            validateCoupon(code);
+            document.querySelector('.validator-section').scrollIntoView({ behavior: 'smooth' });
+        });
     });
 }
 
@@ -539,171 +527,57 @@ async function markCouponAsUsed() {
         return;
     }
 
-    const newId = referrals.length + 1;
     const now = new Date().toISOString();
 
-    await sheets.appendRow(CONFIG.SHEET_INDICACOES, [
-        newId, code, indicadoName, indicadoPhone, now, 'Usado', discountValue, now, observations
-    ]);
+    try {
+        if (CONFIG.USE_MOCK_DATA || !supabase) {
+            // Mock data
+            const newId = referrals.length + 1;
+            MOCK_DATA.referrals.push({
+                id: newId,
+                codigo_usado: code,
+                nome_indicado: indicadoName,
+                telefone_indicado: indicadoPhone,
+                data_indicacao: now,
+                status: 'Usado',
+                valor_desconto: discountValue,
+                data_uso: now,
+                observacoes: observations
+            });
+            referrals.push(MOCK_DATA.referrals[MOCK_DATA.referrals.length - 1]);
+        } else {
+            // Supabase
+            const { error } = await supabase
+                .from('indicacoes')
+                .insert([{
+                    codigo_usado: code,
+                    nome_indicado: indicadoName,
+                    telefone_indicado: indicadoPhone,
+                    status: 'Usado',
+                    valor_desconto: parseFloat(discountValue),
+                    data_uso: now,
+                    observacoes: observations
+                }]);
 
-    // Update local data
-    referrals.push({
-        id: newId,
-        codigo_usado: code,
-        nome_indicado: indicadoName,
-        telefone_indicado: indicadoPhone,
-        data_indicacao: now,
-        status: 'Usado',
-        valor_desconto: discountValue,
-        data_uso: now,
-        observacoes: observations
-    });
+            if (error) throw error;
+        }
 
-    showToast('Cupom registrado com sucesso!', 'success');
+        showToast('Cupom registrado com sucesso!', 'success');
 
-    // Clear form
-    document.getElementById('indicado-name').value = '';
-    document.getElementById('indicado-phone').value = '';
-    document.getElementById('observations').value = '';
-    document.getElementById('search-coupon').value = '';
-    document.getElementById('validation-result').style.display = 'none';
-    document.getElementById('use-coupon-form').style.display = 'none';
+        // Clear form
+        document.getElementById('indicado-name').value = '';
+        document.getElementById('indicado-phone').value = '';
+        document.getElementById('observations').value = '';
+        document.getElementById('search-coupon').value = '';
+        document.getElementById('validation-result').style.display = 'none';
+        document.getElementById('use-coupon-form').style.display = 'none';
 
-    // Reload ambassador list
-    loadAmbassadorsList();
-}
-
-// ==========================================
-// Office Panel - Ambassadors List
-// ==========================================
-async function loadAmbassadorsList() {
-    await loadData();
-
-    const totalAmbassadors = ambassadors.length;
-    const totalReferrals = referrals.length;
-    const convertedReferrals = referrals.filter(r => r.status === 'Usado' || r.status === 'Validado').length;
-    const conversionRate = totalReferrals > 0 ? Math.round((convertedReferrals / totalReferrals) * 100) : 0;
-
-    document.getElementById('office-total-ambassadors').textContent = totalAmbassadors;
-    document.getElementById('office-total-referrals').textContent = totalReferrals;
-    document.getElementById('office-conversion-rate').textContent = conversionRate + '%';
-
-    const container = document.getElementById('ambassadors-list');
-
-    if (ambassadors.length === 0) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <div class="empty-state-icon">👥</div>
-                <p>Nenhum embaixador cadastrado ainda</p>
-            </div>
-        `;
-        return;
+        // Reload ambassador list
+        loadAmbassadorsList();
+    } catch (error) {
+        console.error('Error marking coupon as used:', error);
+        showToast('Erro ao registrar cupom: ' + error.message, 'error');
     }
-
-    // Create ambassador cards with stats
-    container.innerHTML = ambassadors.map(ambassador => {
-        const ambassadorReferrals = referrals.filter(r => r.codigo_usado === ambassador.codigo);
-        const totalUses = ambassadorReferrals.length;
-        const converted = ambassadorReferrals.filter(r => r.status === 'Usado' || r.status === 'Validado').length;
-        const pending = ambassadorReferrals.filter(r => r.status === 'Pendente').length;
-
-        return `
-            <div class="ambassador-card">
-                <div class="ambassador-header">
-                    <div class="ambassador-info">
-                        <h3 class="ambassador-name">${ambassador.nome}</h3>
-                        <div class="ambassador-meta">
-                            <span class="ambassador-code">Cupom: ${ambassador.codigo}</span>
-                            <a href="https://wa.me/${ambassador.telefone.replace(/\D/g, '')}" 
-                               target="_blank" 
-                               class="ambassador-phone">
-                                📱 ${ambassador.telefone}
-                            </a>
-                        </div>
-                    </div>
-                    <button class="btn btn-secondary btn-validate-quick" data-code="${ambassador.codigo}">
-                        Validar Cupom
-                    </button>
-                </div>
-                
-                <div class="ambassador-stats">
-                    <div class="mini-stat">
-                        <span class="mini-stat-value">${totalUses}</span>
-                        <span class="mini-stat-label">Total</span>
-                    </div>
-                    <div class="mini-stat success">
-                        <span class="mini-stat-value">${converted}</span>
-                        <span class="mini-stat-label">Convertidas</span>
-                    </div>
-                    <div class="mini-stat warning">
-                        <span class="mini-stat-value">${pending}</span>
-                        <span class="mini-stat-label">Pendentes</span>
-                    </div>
-                </div>
-            </div>
-        `;
-    }).join('');
-
-    // Add click handlers for quick validate buttons
-    document.querySelectorAll('.btn-validate-quick').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const code = e.target.dataset.code;
-            document.getElementById('search-coupon').value = code;
-            validateCoupon(code);
-            // Scroll to validation section
-            document.querySelector('.validator-section').scrollIntoView({ behavior: 'smooth' });
-        });
-    });
-}
-
-// ==========================================
-// Admin Dashboard
-// ==========================================
-async function loadAdminDashboard() {
-    await loadData();
-
-    const totalCodes = ambassadors.length;
-    const totalAmbassadors = ambassadors.length;
-    const totalReferrals = referrals.length;
-    const convertedReferrals = referrals.filter(r => r.status === 'Usado' || r.status === 'Validado').length;
-    const conversionRate = totalReferrals > 0 ? Math.round((convertedReferrals / totalReferrals) * 100) : 0;
-
-    document.getElementById('admin-total-codes').textContent = totalCodes;
-    document.getElementById('admin-total-ambassadors').textContent = totalAmbassadors;
-    document.getElementById('admin-conversion-rate').textContent = conversionRate + '%';
-
-    // Recent referrals
-    const recentReferrals = [...referrals]
-        .sort((a, b) => new Date(b.data_indicacao) - new Date(a.data_indicacao))
-        .slice(0, 10);
-
-    const container = document.getElementById('admin-recent-referrals');
-
-    if (recentReferrals.length === 0) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <div class="empty-state-icon">📊</div>
-                <p>Nenhuma indicação registrada ainda</p>
-            </div>
-        `;
-        return;
-    }
-
-    container.innerHTML = recentReferrals.map(ref => {
-        const date = new Date(ref.data_indicacao).toLocaleDateString('pt-BR');
-        const statusClass = ref.status === 'Usado' ? 'status-used' :
-            ref.status === 'Validado' ? 'status-validated' : 'status-pending';
-
-        return `
-            <div class="referral-item">
-                <div class="referral-info">
-                    <h3>${ref.nome_indicado || 'Aguardando'} (${ref.codigo_usado})</h3>
-                    <p>${date} - ${ref.telefone_indicado || 'Sem telefone'}</p>
-                </div>
-                <span class="referral-status ${statusClass}">${ref.status}</span>
-            </div>
-        `;
-    }).join('');
 }
 
 // ==========================================
@@ -714,7 +588,6 @@ function goToScreen(screenId) {
     document.getElementById(screenId).classList.add('active');
     currentScreen = screenId;
 
-    // Load data for specific screens
     if (screenId === 'oficina-panel') {
         loadAmbassadorsList();
     }
@@ -742,6 +615,9 @@ function showLoading(show) {
 // Event Listeners
 // ==========================================
 document.addEventListener('DOMContentLoaded', () => {
+    // Initialize Supabase
+    initSupabase();
+
     // Landing page
     document.getElementById('btn-embaixador').addEventListener('click', () => {
         goToScreen('embaixador-login');
@@ -820,5 +696,5 @@ document.addEventListener('DOMContentLoaded', () => {
     // Load saved session
     loadUserSession();
 
-    console.log('Box 73 Sistema de Indicação initialized');
+    console.log('Box 73 Sistema de Indicação initialized with Supabase');
 });
