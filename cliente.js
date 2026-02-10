@@ -1,271 +1,226 @@
-// ==========================================
-// Box 73 - Consulta do Embaixador (cliente.js)
-// ==========================================
+// =========================================================
+//  Box 73 – Indicação · Página do Cliente (cliente.js)
+//  Consulta por CPF → mostra TODOS os cupons + validações
+// =========================================================
 
-let supabaseClient = null;
-let currentUser = null;
+const { createClient } = window.supabase;
+const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// ==========================================
-// Supabase Init
-// ==========================================
-function initSupabase() {
-    if (CONFIG.USE_MOCK_DATA) {
-        console.log('Rodando em modo MOCK DATA');
-        return;
-    }
+// ---------- Helpers ----------
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => document.querySelectorAll(s);
 
-    if (typeof window.supabase === 'undefined' || !window.supabase.createClient) {
-        console.warn('Supabase CDN não carregou. Usando mock data.');
-        CONFIG.USE_MOCK_DATA = true;
-        return;
-    }
+function formatCPF(v) {
+    v = v.replace(/\D/g, '').slice(0, 11);
+    if (v.length > 9) return v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4');
+    if (v.length > 6) return v.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3');
+    if (v.length > 3) return v.replace(/(\d{3})(\d{1,3})/, '$1.$2');
+    return v;
+}
+function cleanCPF(v) { return v.replace(/\D/g, ''); }
+function formatDate(d) { return d ? new Date(d).toLocaleDateString('pt-BR') : '-'; }
+function showToast(msg, type = 'success') {
+    const t = $('#toast'); t.textContent = msg;
+    t.className = 'toast show ' + type;
+    setTimeout(() => t.className = 'toast', 3000);
+}
+function showLoading() { $('#loading-overlay').style.display = 'flex'; }
+function hideLoading() { $('#loading-overlay').style.display = 'none'; }
 
-    try {
-        supabaseClient = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
-        console.log('Supabase inicializado');
-    } catch (error) {
-        console.error('Falha ao inicializar Supabase:', error);
-        CONFIG.USE_MOCK_DATA = true;
-    }
+function showScreen(id) {
+    $$('.screen').forEach(s => s.classList.remove('active'));
+    $(`#${id}`).classList.add('active');
 }
 
-// ==========================================
-// Mock Data
-// ==========================================
-const MOCK_DATA = {
-    ambassadors: [
-        { id: 1, nome: 'João Silva', cpf: '111.222.333-44', telefone: '(65) 98765-4321', codigo: 'JOAO73', data_cadastro: new Date().toISOString() },
-        { id: 2, nome: 'Maria Santos', cpf: '555.666.777-88', telefone: '(65) 99876-5432', codigo: 'MARIA73', data_cadastro: new Date().toISOString() }
-    ],
-    referrals: [
-        { id: 1, codigo_usado: 'JOAO73', nome_indicado: 'Pedro Costa', data_uso: new Date(Date.now() - 86400000 * 2).toISOString(), status: 'Usado', valor_desconto: 10, observacoes: 'Revisão completa' },
-        { id: 2, codigo_usado: 'JOAO73', nome_indicado: 'Ana Paula', data_uso: new Date(Date.now() - 86400000).toISOString(), status: 'Usado', valor_desconto: 10, observacoes: 'Troca de óleo' },
-        { id: 3, codigo_usado: 'MARIA73', nome_indicado: 'Carlos Mendes', data_uso: new Date().toISOString(), status: 'Usado', valor_desconto: 10, observacoes: 'Revisão completa' }
-    ]
-};
-
-// ==========================================
-// CPF Formatting
-// ==========================================
-function formatCPF(value) {
-    const digits = value.replace(/\D/g, '').substring(0, 11);
-    if (digits.length <= 3) return digits;
-    if (digits.length <= 6) return digits.replace(/(\d{3})(\d+)/, '$1.$2');
-    if (digits.length <= 9) return digits.replace(/(\d{3})(\d{3})(\d+)/, '$1.$2.$3');
-    return digits.replace(/(\d{3})(\d{3})(\d{3})(\d+)/, '$1.$2.$3-$4');
+// ---------- Mock Data ----------
+function getMockDataForCPF(cpf) {
+    if (cpf === '12345678901') {
+        return {
+            embaixador: { id: 1, nome: 'João da Silva', cpf: '12345678901', telefone: '11999887766' },
+            cupons: [
+                {
+                    id: 1, codigo: 'JOAO101', data_criacao: '2025-06-02',
+                    mecanicas: { nome: 'Promoção Revisão 2025', beneficio_embaixador: '15% desc revisão', beneficio_cliente: '10% desc 1ª revisão', meta_validacoes: 3 },
+                    indicacoes: [
+                        { nome_indicado: 'Carlos Souza', telefone_indicado: '11977665544', data_uso: '2025-06-10', servico: 'Troca de óleo' }
+                    ]
+                },
+                {
+                    id: 2, codigo: 'JOAO202', data_criacao: '2025-07-01',
+                    mecanicas: { nome: 'Campanha Inverno', beneficio_embaixador: '20% desc peças', beneficio_cliente: '15% desc serviço', meta_validacoes: 5 },
+                    indicacoes: []
+                }
+            ]
+        };
+    }
+    return null;
 }
 
-function cleanCPF(cpf) {
-    return cpf.replace(/\D/g, '');
-}
-
-// ==========================================
-// Consulta por CPF
-// ==========================================
+// ---------- Supabase Queries ----------
 async function consultarCPF(cpf) {
-    const cleanedCPF = cleanCPF(cpf);
+    const clean = cleanCPF(cpf);
+    if (clean.length !== 11) { showToast('CPF inválido.', 'error'); return; }
 
-    if (cleanedCPF.length !== 11) {
-        showToast('CPF inválido. Deve ter 11 dígitos.', 'error');
-        return;
-    }
-
-    showLoading(true);
-
+    showLoading();
     try {
-        let ambassador = null;
-        let referrals = [];
+        let embaixador, cupons;
 
-        if (CONFIG.USE_MOCK_DATA) {
-            ambassador = MOCK_DATA.ambassadors.find(a => cleanCPF(a.cpf) === cleanedCPF);
-            if (ambassador) {
-                referrals = MOCK_DATA.referrals.filter(r => r.codigo_usado === ambassador.codigo);
-            }
+        if (USE_MOCK_DATA) {
+            const mock = getMockDataForCPF(clean);
+            if (!mock) { showToast('CPF não encontrado.', 'error'); hideLoading(); return; }
+            embaixador = mock.embaixador;
+            cupons = mock.cupons;
         } else {
-            // Buscar embaixador por CPF
-            const { data: ambData, error: ambError } = await supabaseClient
-                .from('embaixadores')
-                .select('*')
-                .eq('cpf', cpf)
-                .single();
+            // Fetch embaixador
+            const { data: emb, error: errEmb } = await supabaseClient
+                .from('embaixadores').select('*').eq('cpf', clean).single();
+            if (errEmb || !emb) { showToast('CPF não encontrado. Consulte a oficina.', 'error'); hideLoading(); return; }
+            embaixador = emb;
 
-            if (ambError && ambError.code !== 'PGRST116') throw ambError;
+            // Fetch cupons with mecânica info
+            const { data: cups, error: errCup } = await supabaseClient
+                .from('cupons')
+                .select('*, mecanicas(nome, beneficio_embaixador, beneficio_cliente, meta_validacoes)')
+                .eq('embaixador_id', emb.id)
+                .order('data_criacao', { ascending: false });
+            if (errCup) { console.error(errCup); showToast('Erro ao buscar cupons.', 'error'); hideLoading(); return; }
 
-            // Tentar também sem formatação
-            if (!ambData) {
-                const { data: ambData2, error: ambError2 } = await supabaseClient
-                    .from('embaixadores')
-                    .select('*')
-                    .eq('cpf', cleanedCPF)
-                    .single();
-
-                if (ambError2 && ambError2.code !== 'PGRST116') throw ambError2;
-                ambassador = ambData2;
-            } else {
-                ambassador = ambData;
-            }
-
-            if (ambassador) {
-                const { data: refData, error: refError } = await supabaseClient
+            // Fetch indicações for all cupons
+            const cupomIds = (cups || []).map(c => c.id);
+            let indicacoes = [];
+            if (cupomIds.length) {
+                const { data: indData } = await supabaseClient
                     .from('indicacoes')
                     .select('*')
-                    .eq('codigo_usado', ambassador.codigo);
-
-                if (refError) throw refError;
-                referrals = refData || [];
+                    .in('cupom_id', cupomIds)
+                    .order('data_uso', { ascending: false });
+                indicacoes = indData || [];
             }
+
+            // Merge indicações into cupons
+            cupons = (cups || []).map(c => ({
+                ...c,
+                indicacoes: indicacoes.filter(i => i.cupom_id === c.id)
+            }));
         }
 
-        if (!ambassador) {
-            showToast('CPF não encontrado. Verifique com a oficina.', 'error');
-            showLoading(false);
-            return;
-        }
-
-        // Salvar e mostrar dashboard
-        currentUser = ambassador;
-        showDashboard(ambassador, referrals);
-
-    } catch (error) {
-        console.error('Erro na consulta:', error);
-        showToast('Erro ao consultar. Tente novamente.', 'error');
-    } finally {
-        showLoading(false);
+        renderDashboard(embaixador, cupons);
+    } catch (err) {
+        console.error('consultarCPF:', err);
+        showToast('Erro inesperado.', 'error');
     }
+    hideLoading();
 }
 
-// ==========================================
-// Dashboard do Cliente
-// ==========================================
-function showDashboard(ambassador, referrals) {
-    // Mudar de tela
-    document.getElementById('cliente-login').classList.remove('active');
-    document.getElementById('cliente-dashboard').classList.add('active');
+// ---------- Render Dashboard ----------
+function renderDashboard(emb, cupons) {
+    showScreen('screen-dashboard');
 
-    // Preencher dados
-    document.getElementById('user-name').textContent = ambassador.nome.split(' ')[0];
-    document.getElementById('user-code').textContent = ambassador.codigo;
-    document.getElementById('display-code').textContent = ambassador.codigo;
+    $('#cli-nome').textContent = emb.nome;
+    $('#cli-cpf').textContent = formatCPF(emb.cpf);
 
     // Stats
-    const totalReferrals = referrals.length;
-    const usedReferrals = referrals.filter(r => r.status === 'Usado').length;
+    const totalVal = cupons.reduce((sum, c) => sum + (c.indicacoes?.length || 0), 0);
+    $('#cli-st-cup').textContent = cupons.length;
+    $('#cli-st-val').textContent = totalVal;
 
-    document.getElementById('stat-total').textContent = totalReferrals;
-    document.getElementById('stat-converted').textContent = usedReferrals;
-
-    // WhatsApp preview
-    const message = CONFIG.DEFAULT_WHATSAPP_MESSAGE
-        .replace('{{CODE}}', ambassador.codigo)
-        .replace('{{DISCOUNT}}', CONFIG.DEFAULT_DISCOUNT);
-    document.getElementById('whatsapp-preview').textContent = message;
-
-    // Lista de indicações
-    const container = document.getElementById('referrals-list');
-
-    if (referrals.length === 0) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <div class="empty-state-icon">📭</div>
-                <p>Nenhuma indicação ainda.<br>Compartilhe seu cupom para começar!</p>
-            </div>
-        `;
+    // Cupons list
+    const listEl = $('#cli-cupons-list');
+    if (!cupons.length) {
+        listEl.innerHTML = '<p class="empty-state">Você ainda não tem cupons. Consulte a oficina Box 73!</p>';
     } else {
-        const sorted = [...referrals].sort((a, b) => new Date(b.data_uso) - new Date(a.data_uso));
-        container.innerHTML = sorted.map(ref => {
-            const date = new Date(ref.data_uso).toLocaleDateString('pt-BR');
+        listEl.innerHTML = cupons.map(c => {
+            const valCount = c.indicacoes?.length || 0;
+            const meta = c.mecanicas?.meta_validacoes || '?';
+            const progresso = meta !== '?' ? Math.min(100, Math.round((valCount / meta) * 100)) : 0;
+            const metaAtingida = meta !== '?' && valCount >= meta;
+
+            let indicacoesHTML = '';
+            if (c.indicacoes && c.indicacoes.length) {
+                indicacoesHTML = `
+                    <div class="validacoes-list">
+                        <h4>Validações deste cupom:</h4>
+                        ${c.indicacoes.map(ind => `
+                            <div class="validacao-item">
+                                <span>👤 ${ind.nome_indicado}</span>
+                                <span>📅 ${formatDate(ind.data_uso)}</span>
+                                <span>📞 ${ind.telefone_indicado || '-'}</span>
+                                ${ind.servico ? `<span>🔧 ${ind.servico}</span>` : ''}
+                            </div>
+                        `).join('')}
+                    </div>`;
+            } else {
+                indicacoesHTML = '<p class="empty-sub">Nenhuma validação ainda. Compartilhe seu cupom!</p>';
+            }
+
             return `
-                <div class="referral-item">
-                    <div class="referral-info">
-                        <h3>${ref.nome_indicado}</h3>
-                        <p>${date} · ${ref.observacoes || 'Sem detalhes'}</p>
+                <div class="cupom-card">
+                    <div class="cupom-header">
+                        <div class="cupom-code">🎫 ${c.codigo}</div>
+                        ${metaAtingida ? '<span class="badge badge-gold">🏆 Meta Atingida!</span>' : ''}
                     </div>
-                    <span class="referral-status status-used">✅ Usado</span>
-                </div>
-            `;
+                    <div class="cupom-info">
+                        <span>⚙️ ${c.mecanicas?.nome || '-'}</span>
+                        <span>🎁 Seu benefício: ${c.mecanicas?.beneficio_embaixador || '-'}</span>
+                        <span>🎁 Benefício p/ indicado: ${c.mecanicas?.beneficio_cliente || '-'}</span>
+                    </div>
+                    <div class="progress-section">
+                        <div class="progress-label">${valCount}/${meta} validações para seu benefício</div>
+                        <div class="progress-bar"><div class="progress-fill ${metaAtingida ? 'progress-complete' : ''}" style="width:${progresso}%"></div></div>
+                    </div>
+                    ${indicacoesHTML}
+                    <div class="cupom-actions">
+                        <button class="btn btn-primary btn-sm btn-share" data-code="${c.codigo}" data-benefit="${c.mecanicas?.beneficio_cliente || ''}">
+                            📱 Compartilhar WhatsApp
+                        </button>
+                        <button class="btn btn-secondary btn-sm btn-copy-code" data-code="${c.codigo}">
+                            📋 Copiar Código
+                        </button>
+                    </div>
+                </div>`;
         }).join('');
+
+        // Share handlers
+        listEl.querySelectorAll('.btn-share').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const code = btn.getAttribute('data-code');
+                const benefit = btn.getAttribute('data-benefit');
+                shareWhatsApp(code, benefit);
+            });
+        });
+        listEl.querySelectorAll('.btn-copy-code').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const code = btn.getAttribute('data-code');
+                navigator.clipboard.writeText(code).then(() => showToast('Código copiado!')).catch(() => showToast('Erro ao copiar', 'error'));
+            });
+        });
     }
 }
 
-// ==========================================
-// WhatsApp & Copy
-// ==========================================
-function shareWhatsApp() {
-    if (!currentUser) return;
-    const message = CONFIG.DEFAULT_WHATSAPP_MESSAGE
-        .replace('{{CODE}}', currentUser.codigo)
-        .replace('{{DISCOUNT}}', CONFIG.DEFAULT_DISCOUNT);
-    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
-    showToast('Abrindo WhatsApp...', 'success');
+// ---------- WhatsApp Share ----------
+function shareWhatsApp(code, benefit) {
+    let msg = DEFAULT_WHATSAPP_MESSAGE || 'Olá! Use meu cupom {{CODE}} na Box 73 e ganhe {{DISCOUNT}}!';
+    msg = msg.replace('{{CODE}}', code).replace('{{DISCOUNT}}', benefit || DEFAULT_DISCOUNT + '% de desconto');
+    const url = `https://wa.me/?text=${encodeURIComponent(msg)}`;
+    window.open(url, '_blank');
 }
 
-function copyCode() {
-    if (!currentUser) return;
-    navigator.clipboard.writeText(currentUser.codigo).then(() => {
-        showToast('Código copiado! 📋', 'success');
-    }).catch(() => {
-        const ta = document.createElement('textarea');
-        ta.value = currentUser.codigo;
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand('copy');
-        document.body.removeChild(ta);
-        showToast('Código copiado! 📋', 'success');
-    });
-}
-
-// ==========================================
-// UI Helpers
-// ==========================================
-function showToast(message, type = 'success') {
-    const toast = document.getElementById('toast');
-    toast.textContent = message;
-    toast.className = `toast ${type} show`;
-    setTimeout(() => toast.classList.remove('show'), 3000);
-}
-
-function showLoading(show) {
-    const overlay = document.getElementById('loading-overlay');
-    if (overlay) overlay.style.display = show ? 'flex' : 'none';
-}
-
-// ==========================================
-// Initialize
-// ==========================================
-document.addEventListener('DOMContentLoaded', function () {
-    console.log('🏍️ Box 73 - Consulta do Embaixador carregada');
-    initSupabase();
-
+// ---------- Init ----------
+document.addEventListener('DOMContentLoaded', () => {
     // CPF mask
-    const cpfInput = document.getElementById('consulta-cpf');
-    if (cpfInput) {
-        cpfInput.addEventListener('input', (e) => {
-            e.target.value = formatCPF(e.target.value);
-        });
-
-        cpfInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') document.getElementById('btn-consultar').click();
-        });
-    }
+    const cpfInput = $('#input-cpf');
+    cpfInput.addEventListener('input', (e) => { e.target.value = formatCPF(e.target.value); });
 
     // Consultar button
-    document.getElementById('btn-consultar').addEventListener('click', () => {
-        const cpf = document.getElementById('consulta-cpf').value.trim();
-        if (cpf) {
-            consultarCPF(cpf);
-        } else {
-            showToast('Digite seu CPF', 'error');
-        }
-    });
+    $('#btn-consultar').addEventListener('click', () => consultarCPF(cpfInput.value));
 
-    // Back button
-    document.getElementById('back-from-dashboard').addEventListener('click', () => {
-        document.getElementById('cliente-dashboard').classList.remove('active');
-        document.getElementById('cliente-login').classList.add('active');
-        currentUser = null;
-    });
+    // Enter key
+    cpfInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') consultarCPF(cpfInput.value); });
 
-    // WhatsApp & Copy
-    document.getElementById('btn-share-whatsapp').addEventListener('click', shareWhatsApp);
-    document.getElementById('btn-copy-code').addEventListener('click', copyCode);
+    // Trocar CPF
+    $('#btn-trocar-cpf').addEventListener('click', () => {
+        showScreen('screen-login');
+        cpfInput.value = '';
+        cpfInput.focus();
+    });
 });

@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,158 +7,144 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔧</text></svg>">
 </head>
-
 <body>
-    <div id="app">
-        <section id="oficina-panel" class="screen active">
-            <div class="container">
-                <div class="brand-container">
-                    <h1 class="brand-title">Box 73</h1>
-                    <p class="brand-subtitle">🔧 Painel da Oficina</p>
+<div id="app">
+    <section class="screen active" id="oficina-panel">
+        <div class="container">
+            <div class="brand-container">
+                <h1 class="brand-title">Box 73</h1>
+                <p class="brand-subtitle">🔧 Painel da Oficina</p>
+            </div>
+
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab active" data-tab="tab-dashboard">📊 Dashboard</button>
+                <button class="tab" data-tab="tab-cadastro">👤 Embaixador</button>
+                <button class="tab" data-tab="tab-mecanicas">⚙️ Mecânicas</button>
+                <button class="tab" data-tab="tab-criar-cupom">🎫 Criar Cupom</button>
+                <button class="tab" data-tab="tab-validar">✅ Validar</button>
+            </div>
+
+            <!-- ===== TAB: DASHBOARD ===== -->
+            <div id="tab-dashboard" class="tab-content active">
+                <div class="stats-grid">
+                    <div class="stat-card"><div class="stat-icon">👥</div><div class="stat-content"><div class="stat-value" id="st-emb">0</div><div class="stat-label">Embaixadores</div></div></div>
+                    <div class="stat-card"><div class="stat-icon">🎫</div><div class="stat-content"><div class="stat-value" id="st-cup">0</div><div class="stat-label">Cupons Ativos</div></div></div>
+                    <div class="stat-card accent-card"><div class="stat-icon">✅</div><div class="stat-content"><div class="stat-value" id="st-val">0</div><div class="stat-label">Validações</div></div></div>
+                    <div class="stat-card"><div class="stat-icon">⚙️</div><div class="stat-content"><div class="stat-value" id="st-mec">0</div><div class="stat-label">Mecânicas</div></div></div>
                 </div>
 
-                <!-- Tabs -->
-                <div class="tabs">
-                    <button class="tab active" data-tab="tab-dashboard">📊 Dashboard</button>
-                    <button class="tab" data-tab="tab-cadastro">➕ Cadastrar</button>
-                    <button class="tab" data-tab="tab-validar">🎫 Validar Cupom</button>
+                <h2 class="section-subtitle">Embaixadores Cadastrados</h2>
+                <div id="ambassadors-list" class="card-list"></div>
+
+                <h2 class="section-subtitle" style="margin-top:var(--spacing-2xl)">Últimas Validações</h2>
+                <div id="recent-validations" class="card-list"></div>
+            </div>
+
+            <!-- ===== DETALHE DO EMBAIXADOR (sobrepõe dashboard) ===== -->
+            <div id="tab-detalhe-embaixador" class="tab-content">
+                <button class="btn-back" id="back-from-detalhe">← Voltar ao Dashboard</button>
+                <div class="detail-header">
+                    <h2 class="section-title" id="det-nome">---</h2>
+                    <p id="det-info" class="detail-subinfo">CPF: --- · Tel: ---</p>
+                </div>
+                <h3 class="section-subtitle">Cupons deste Embaixador</h3>
+                <div id="det-cupons" class="card-list"></div>
+                <h3 class="section-subtitle" style="margin-top:var(--spacing-xl)">Validações</h3>
+                <div id="det-validacoes" class="card-list"></div>
+            </div>
+
+            <!-- ===== TAB: CADASTRAR EMBAIXADOR ===== -->
+            <div id="tab-cadastro" class="tab-content">
+                <div class="form-card">
+                    <h2 class="section-subtitle">Cadastrar Novo Embaixador</h2>
+                    <p class="form-description">Preencha os dados do cliente que será embaixador.</p>
+                    <div class="input-group"><label>Nome Completo *</label><input type="text" id="reg-nome" placeholder="Ex: João da Silva" class="input-field"></div>
+                    <div class="input-group"><label>CPF *</label><input type="text" id="reg-cpf" placeholder="000.000.000-00" class="input-field" maxlength="14"></div>
+                    <div class="input-group"><label>Celular / WhatsApp *</label><input type="tel" id="reg-tel" placeholder="(00) 00000-0000" class="input-field" maxlength="15"></div>
+                    <button class="btn btn-primary btn-large" id="btn-cadastrar-emb">Cadastrar Embaixador</button>
+                </div>
+            </div>
+
+            <!-- ===== TAB: MECÂNICAS ===== -->
+            <div id="tab-mecanicas" class="tab-content">
+                <div class="form-card">
+                    <h2 class="section-subtitle">Criar Mecânica de Cupom</h2>
+                    <p class="form-description">Defina as regras, benefícios e limites de uma campanha de cupons.</p>
+                    <div class="input-group"><label>Nome da Mecânica *</label><input type="text" id="mec-nome" placeholder="Ex: Promoção Revisão 2026" class="input-field"></div>
+                    <div class="input-group"><label>Descrição</label><textarea id="mec-descricao" placeholder="Descreva a mecânica..." class="input-field" rows="2"></textarea></div>
+                    <div class="input-group"><label>Benefício para o Dono do Cupom (Embaixador) *</label><input type="text" id="mec-benef-emb" placeholder="Ex: 15% de desconto na próxima revisão" class="input-field"></div>
+                    <div class="input-group"><label>Quantas validações o embaixador precisa para ganhar o benefício *</label><input type="number" id="mec-meta" placeholder="Ex: 3" class="input-field" min="1" value="3"></div>
+                    <div class="input-group"><label>Benefício para o Cliente que usa o cupom *</label><input type="text" id="mec-benef-cli" placeholder="Ex: 10% de desconto na primeira revisão" class="input-field"></div>
+                    <div class="input-group"><label>Limite de cupons que podem ser emitidos *</label><input type="number" id="mec-limite" placeholder="Ex: 100" class="input-field" min="1" value="100"></div>
+                    <div class="form-row">
+                        <div class="input-group"><label>Data Início *</label><input type="date" id="mec-inicio" class="input-field"></div>
+                        <div class="input-group"><label>Data Fim *</label><input type="date" id="mec-fim" class="input-field"></div>
+                    </div>
+                    <button class="btn btn-primary btn-large" id="btn-criar-mecanica">Criar Mecânica</button>
                 </div>
 
-                <!-- Tab: Dashboard -->
-                <div id="tab-dashboard" class="tab-content active">
-                    <div class="stats-grid">
-                        <div class="stat-card">
-                            <div class="stat-icon">👥</div>
-                            <div class="stat-content">
-                                <div class="stat-value" id="office-total-ambassadors">0</div>
-                                <div class="stat-label">Embaixadores</div>
-                            </div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-icon">🎫</div>
-                            <div class="stat-content">
-                                <div class="stat-value" id="office-total-referrals">0</div>
-                                <div class="stat-label">Cupons Usados</div>
-                            </div>
-                        </div>
-                        <div class="stat-card accent-card">
-                            <div class="stat-icon">📈</div>
-                            <div class="stat-content">
-                                <div class="stat-value" id="office-conversion-rate">0%</div>
-                                <div class="stat-label">Taxa Conversão</div>
-                            </div>
-                        </div>
-                    </div>
+                <h2 class="section-subtitle" style="margin-top:var(--spacing-2xl)">Mecânicas Cadastradas</h2>
+                <div id="mecanicas-list" class="card-list"></div>
+            </div>
 
-                    <h2 class="section-subtitle">Embaixadores Cadastrados</h2>
-                    <div id="ambassadors-list" class="ambassadors-list">
-                        <!-- Preenchido via JS -->
+            <!-- ===== TAB: CRIAR CUPOM ===== -->
+            <div id="tab-criar-cupom" class="tab-content">
+                <div class="form-card">
+                    <h2 class="section-subtitle">Criar Cupom para Embaixador</h2>
+                    <p class="form-description">Vincule um código de cupom a um embaixador e a uma mecânica válida.</p>
+                    <div class="input-group"><label>CPF do Embaixador *</label><input type="text" id="cup-cpf" placeholder="000.000.000-00" class="input-field" maxlength="14"></div>
+                    <div id="cup-emb-info" class="info-box" style="display:none"></div>
+                    <div class="input-group"><label>Mecânica do Cupom *</label><select id="cup-mecanica" class="input-field"><option value="">Selecione uma mecânica...</option></select></div>
+                    <div id="cup-mec-info" class="info-box" style="display:none"></div>
+                    <div class="input-group">
+                        <label>Código do Cupom *</label>
+                        <div class="input-with-action">
+                            <input type="text" id="cup-codigo" placeholder="Ex: JOAO73" class="input-field" style="text-transform:uppercase">
+                            <button class="btn btn-secondary btn-sm" id="btn-gerar-codigo">Gerar Auto</button>
+                        </div>
                     </div>
-
-                    <h2 class="section-subtitle" style="margin-top: var(--spacing-2xl);">Últimos Cupons Validados</h2>
-                    <div id="recent-referrals-list" class="referrals-list">
-                        <!-- Preenchido via JS -->
-                    </div>
+                    <button class="btn btn-primary btn-large" id="btn-criar-cupom">Criar Cupom</button>
                 </div>
+            </div>
 
-                <!-- Tab: Cadastrar Embaixador -->
-                <div id="tab-cadastro" class="tab-content">
-                    <div class="form-card">
-                        <h2 class="section-subtitle">Cadastrar Novo Embaixador</h2>
-                        <p class="form-description">Preencha os dados do cliente que será embaixador da Box 73.</p>
-
-                        <div class="input-group">
-                            <label>Nome Completo *</label>
-                            <input type="text" id="register-name" placeholder="Ex: João da Silva" class="input-field">
-                        </div>
-
-                        <div class="input-group">
-                            <label>CPF *</label>
-                            <input type="text" id="register-cpf" placeholder="000.000.000-00" class="input-field" maxlength="14">
-                        </div>
-
-                        <div class="input-group">
-                            <label>Celular / WhatsApp *</label>
-                            <input type="tel" id="register-phone" placeholder="(00) 00000-0000" class="input-field" maxlength="15">
-                        </div>
-
-                        <div class="input-group">
-                            <label>Código do Cupom *</label>
-                            <div class="input-with-action">
-                                <input type="text" id="register-coupon" placeholder="Ex: JOAO73" class="input-field" style="text-transform: uppercase;">
-                                <button class="btn btn-secondary btn-sm" id="btn-generate-code">Gerar Auto</button>
-                            </div>
-                            <small class="input-hint">Cupom que o embaixador vai compartilhar</small>
-                        </div>
-
-                        <button class="btn btn-primary btn-large" id="btn-register">Cadastrar Embaixador</button>
+            <!-- ===== TAB: VALIDAR CUPOM ===== -->
+            <div id="tab-validar" class="tab-content">
+                <div class="form-card">
+                    <h2 class="section-subtitle">Validar Cupom</h2>
+                    <p class="form-description">Digite o código do cupom apresentado pelo cliente.</p>
+                    <div class="search-box">
+                        <input type="text" id="search-coupon" placeholder="Código do cupom..." class="search-input">
+                        <button class="btn btn-primary" id="btn-validate">Validar</button>
                     </div>
-                </div>
-
-                <!-- Tab: Validar Cupom -->
-                <div id="tab-validar" class="tab-content">
-                    <div class="form-card">
-                        <h2 class="section-subtitle">Validar Cupom de Indicação</h2>
-                        <p class="form-description">Digite o código do cupom que o cliente apresentou.</p>
-
-                        <div class="search-box">
-                            <input type="text" id="search-coupon" placeholder="Digite o código do cupom..." class="search-input">
-                            <button class="btn btn-primary" id="btn-validate">Validar</button>
-                        </div>
-
-                        <div id="validation-result" class="validation-result" style="display: none;"></div>
-
-                        <div id="use-coupon-form" class="use-form" style="display: none;">
-                            <h3 class="section-subtitle">Registrar Uso do Cupom</h3>
-
-                            <div class="input-group">
-                                <label>Nome do Cliente Indicado *</label>
-                                <input type="text" id="indicado-name" placeholder="Nome completo" class="input-field">
-                            </div>
-
-                            <div class="input-group">
-                                <label>Telefone do Indicado</label>
-                                <input type="tel" id="indicado-phone" placeholder="(00) 00000-0000" class="input-field">
-                            </div>
-
-                            <div class="input-group">
-                                <label>Valor do Desconto (%)</label>
-                                <input type="number" id="discount-value" value="10" min="0" max="100" class="input-field">
-                            </div>
-
-                            <div class="input-group">
-                                <label>Serviço Realizado</label>
-                                <textarea id="observations" placeholder="Ex: Revisão completa, troca de óleo..." class="input-field" rows="3"></textarea>
-                            </div>
-
-                            <button class="btn btn-primary btn-large" id="btn-mark-used">✅ Confirmar e Registrar</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Link do cliente -->
-                <div class="client-link-banner">
-                    <p>📱 Link para clientes consultarem seus cupons:</p>
-                    <div class="link-display">
-                        <span id="client-link-url"></span>
-                        <button class="btn btn-secondary btn-sm" id="btn-copy-client-link">Copiar</button>
+                    <div id="validation-result" style="display:none"></div>
+                    <div id="use-coupon-form" class="use-form" style="display:none">
+                        <h3 class="section-subtitle">Registrar Uso</h3>
+                        <div class="input-group"><label>Nome do Cliente Indicado *</label><input type="text" id="indicado-name" placeholder="Nome completo" class="input-field"></div>
+                        <div class="input-group"><label>Telefone do Indicado</label><input type="tel" id="indicado-phone" placeholder="(00) 00000-0000" class="input-field"></div>
+                        <div class="input-group"><label>Serviço Realizado</label><textarea id="observations" placeholder="Ex: Revisão completa..." class="input-field" rows="2"></textarea></div>
+                        <button class="btn btn-primary btn-large" id="btn-mark-used">✅ Confirmar Uso</button>
                     </div>
                 </div>
             </div>
-        </section>
-    </div>
 
-    <!-- Toast -->
-    <div id="toast" class="toast"></div>
+            <!-- Link do cliente -->
+            <div class="client-link-banner">
+                <p>📱 Link para clientes consultarem seus cupons:</p>
+                <div class="link-display">
+                    <span id="client-link-url"></span>
+                    <button class="btn btn-secondary btn-sm" id="btn-copy-link">Copiar</button>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
 
-    <!-- Loading -->
-    <div id="loading-overlay" class="loading-overlay" style="display: none;">
-        <div class="spinner"></div>
-    </div>
+<div id="toast" class="toast"></div>
+<div id="loading-overlay" class="loading-overlay" style="display:none"><div class="spinner"></div></div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="config.js"></script>
-    <script src="app.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
 </body>
-
 </html>

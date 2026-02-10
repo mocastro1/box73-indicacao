@@ -1036,3 +1036,331 @@ textarea.input-field {
         padding: var(--spacing-xl);
     }
 }
+
+/* ==========================================
+   Card List / Card Items (Dashboard, etc.)
+   ========================================== */
+.card-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.card-item {
+    background: var(--color-gray-900);
+    border: 1px solid var(--color-gray-800);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    transition: all var(--transition-base);
+}
+
+.card-item.clickable {
+    cursor: pointer;
+}
+
+.card-item.clickable:hover {
+    border-color: var(--color-orange);
+    transform: translateX(4px);
+}
+
+.card-item.card-inactive {
+    opacity: 0.5;
+}
+
+.card-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-sm);
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+}
+
+.card-item-header strong {
+    font-size: var(--font-size-base);
+}
+
+.card-item-body {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
+    font-size: var(--font-size-sm);
+    color: var(--color-gray-400);
+    margin-top: var(--spacing-xs);
+}
+
+.card-item-actions {
+    margin-top: var(--spacing-md);
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+/* ==========================================
+   Badges
+   ========================================== */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--spacing-xs) var(--spacing-md);
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    background: rgba(255,102,0,0.15);
+    color: var(--color-orange);
+    border: 1px solid rgba(255,102,0,0.3);
+    white-space: nowrap;
+}
+
+.badge-green {
+    background: rgba(16,185,129,0.15);
+    color: var(--color-success);
+    border-color: rgba(16,185,129,0.3);
+}
+
+.badge-red {
+    background: rgba(239,68,68,0.15);
+    color: var(--color-error);
+    border-color: rgba(239,68,68,0.3);
+}
+
+.badge-gold {
+    background: rgba(245,158,11,0.15);
+    color: var(--color-warning);
+    border-color: rgba(245,158,11,0.3);
+}
+
+/* ==========================================
+   Info Box
+   ========================================== */
+.info-box {
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    margin-bottom: var(--spacing-lg);
+    line-height: 1.7;
+    border: 1px solid var(--color-gray-700);
+    background: var(--color-gray-800);
+}
+
+.info-box.info-success {
+    border-color: rgba(16,185,129,0.4);
+    background: rgba(16,185,129,0.08);
+}
+
+.info-box.info-error {
+    border-color: rgba(239,68,68,0.4);
+    background: rgba(239,68,68,0.08);
+}
+
+/* ==========================================
+   Detail Header (Detalhe Embaixador)
+   ========================================== */
+.detail-header {
+    margin-bottom: var(--spacing-xl);
+    padding-bottom: var(--spacing-lg);
+    border-bottom: 1px solid var(--color-gray-800);
+}
+
+.detail-subinfo {
+    color: var(--color-gray-400);
+    font-size: var(--font-size-sm);
+    margin-top: var(--spacing-xs);
+}
+
+/* ==========================================
+   Form Row (side by side fields)
+   ========================================== */
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-md);
+}
+
+@media (max-width: 600px) {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ==========================================
+   Button Variants
+   ========================================== */
+.btn-danger {
+    background: rgba(239,68,68,0.15);
+    color: var(--color-error);
+    border: 1px solid rgba(239,68,68,0.3);
+}
+
+.btn-danger:hover {
+    background: rgba(239,68,68,0.25);
+}
+
+.btn-success {
+    background: rgba(16,185,129,0.15);
+    color: var(--color-success);
+    border: 1px solid rgba(16,185,129,0.3);
+}
+
+.btn-success:hover {
+    background: rgba(16,185,129,0.25);
+}
+
+/* ==========================================
+   Client Info Bar (cliente.html)
+   ========================================== */
+.client-info-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-lg);
+    background: var(--color-gray-900);
+    border: 1px solid var(--color-gray-800);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-md) var(--spacing-xl);
+    margin-bottom: var(--spacing-2xl);
+    flex-wrap: wrap;
+}
+
+.client-info-bar > div { color: var(--color-gray-400); font-size: var(--font-size-sm); }
+.client-info-bar > div strong { color: var(--color-white); font-size: var(--font-size-base); }
+
+/* ==========================================
+   Cupom Card (cliente dashboard)
+   ========================================== */
+.cupom-card {
+    background: var(--color-gray-900);
+    border: 1px solid var(--color-gray-800);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-xl);
+    margin-bottom: var(--spacing-lg);
+}
+
+.cupom-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-md);
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+}
+
+.cupom-code {
+    font-size: var(--font-size-xl);
+    font-weight: 700;
+    color: var(--color-orange);
+}
+
+.cupom-info {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    font-size: var(--font-size-sm);
+    color: var(--color-gray-400);
+    margin-bottom: var(--spacing-lg);
+}
+
+.cupom-actions {
+    display: flex;
+    gap: var(--spacing-md);
+    flex-wrap: wrap;
+    margin-top: var(--spacing-lg);
+}
+
+/* ==========================================
+   Progress Bar
+   ========================================== */
+.progress-section {
+    margin-bottom: var(--spacing-lg);
+}
+
+.progress-label {
+    font-size: var(--font-size-sm);
+    color: var(--color-gray-400);
+    margin-bottom: var(--spacing-sm);
+}
+
+.progress-bar {
+    height: 8px;
+    background: var(--color-gray-800);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--color-orange);
+    border-radius: var(--radius-full);
+    transition: width var(--transition-slow);
+}
+
+.progress-fill.progress-complete {
+    background: var(--color-success);
+}
+
+/* ==========================================
+   Validações List (inside cupom card)
+   ========================================== */
+.validacoes-list {
+    margin-top: var(--spacing-md);
+    padding-top: var(--spacing-md);
+    border-top: 1px solid var(--color-gray-800);
+}
+
+.validacoes-list h4 {
+    font-size: var(--font-size-sm);
+    color: var(--color-gray-400);
+    margin-bottom: var(--spacing-md);
+    font-weight: 600;
+}
+
+.validacao-item {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
+    padding: var(--spacing-sm) 0;
+    border-bottom: 1px solid var(--color-gray-800);
+    font-size: var(--font-size-sm);
+    color: var(--color-gray-300);
+}
+
+.validacao-item:last-child { border-bottom: none; }
+
+.empty-sub {
+    font-size: var(--font-size-sm);
+    color: var(--color-gray-500);
+    padding: var(--spacing-md) 0;
+    text-align: center;
+    font-style: italic;
+}
+
+/* ==========================================
+   Share Section
+   ========================================== */
+.share-section {
+    margin-top: var(--spacing-2xl);
+    padding-top: var(--spacing-xl);
+    border-top: 1px solid var(--color-gray-800);
+}
+
+/* ==========================================
+   Responsive - new components
+   ========================================== */
+@media (max-width: 768px) {
+    .card-item-body {
+        flex-direction: column;
+        gap: var(--spacing-xs);
+    }
+    .cupom-actions {
+        flex-direction: column;
+    }
+    .cupom-actions .btn {
+        width: 100%;
+    }
+    .client-info-bar {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .validacao-item {
+        flex-direction: column;
+        gap: var(--spacing-xs);
+    }
+}
