@@ -14,9 +14,8 @@
 .DS_Store
 Thumbs.db
 
-# Node (if using npm)
+# Node
 node_modules/
-package-lock.json
 dist/
 
 # Logs
@@ -25,3 +24,13 @@ npm-debug.log*
 
 # Credentials (keep local only)
 config.local.js
+
+# Backend
+backend/node_modules/
+backend/dist/
+backend/.env
+backend/prisma/migrations/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/

@@ -1,0 +1,175 @@
+// =========================================================
+//  Box 73 – Sistema de Indicação · Prisma Schema
+// =========================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ============ ENUMS ============
+
+enum UserRole {
+  ADMIN
+  GERENTE
+  ATENDENTE
+}
+
+enum MecanicaStatus {
+  RASCUNHO
+  ATIVA
+  PAUSADA
+  ENCERRADA
+}
+
+enum IndicacaoStatus {
+  PENDENTE
+  VALIDADO
+  USADO
+  CANCELADO
+}
+
+// ============ USUÁRIOS DA OFICINA ============
+
+model Usuario {
+  id           Int       @id @default(autoincrement())
+  nome         String
+  email        String    @unique
+  senha        String
+  role         UserRole  @default(ATENDENTE)
+  ativo        Boolean   @default(true)
+  ultimoAcesso DateTime? @map("ultimo_acesso")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  mecanicasCriadas Mecanica[]  @relation("MecanicaCriadaPor")
+  cuponsCriados    Cupom[]     @relation("CupomCriadoPor")
+  validacoesFeitas Indicacao[] @relation("ValidadoPor")
+  auditLogs        AuditLog[]
+
+  @@map("usuarios")
+}
+
+// ============ EMBAIXADORES ============
+
+model Embaixador {
+  id             Int       @id @default(autoincrement())
+  nome           String
+  cpf            String    @unique
+  telefone       String
+  email          String?
+  dataNascimento DateTime? @map("data_nascimento")
+  endereco       String?
+  observacoes    String?
+  ativo          Boolean   @default(true)
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  cupons Cupom[]
+
+  @@index([cpf])
+  @@map("embaixadores")
+}
+
+// ============ MECÂNICAS (CAMPANHAS) ============
+
+model Mecanica {
+  id                  Int             @id @default(autoincrement())
+  nome                String
+  descricao           String?
+  beneficioEmbaixador String          @map("beneficio_embaixador")
+  beneficioCliente    String          @map("beneficio_cliente")
+  metaValidacoes      Int             @default(3) @map("meta_validacoes")
+  limiteCupons        Int             @default(100) @map("limite_cupons")
+  cuponsEmitidos      Int             @default(0) @map("cupons_emitidos")
+  dataInicio          DateTime        @map("data_inicio")
+  dataFim             DateTime        @map("data_fim")
+  status              MecanicaStatus  @default(ATIVA)
+  createdAt           DateTime        @default(now()) @map("created_at")
+  updatedAt           DateTime        @updatedAt @map("updated_at")
+
+  criadoPorId Int     @map("criado_por_id")
+  criadoPor   Usuario @relation("MecanicaCriadaPor", fields: [criadoPorId], references: [id])
+
+  cupons Cupom[]
+
+  @@index([status, dataInicio, dataFim])
+  @@map("mecanicas")
+}
+
+// ============ CUPONS ============
+
+model Cupom {
+  id           Int      @id @default(autoincrement())
+  codigo       String   @unique
+  embaixadorId Int      @map("embaixador_id")
+  mecanicaId   Int      @map("mecanica_id")
+  ativo        Boolean  @default(true)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  criadoPorId Int     @map("criado_por_id")
+  criadoPor   Usuario @relation("CupomCriadoPor", fields: [criadoPorId], references: [id])
+
+  embaixador Embaixador @relation(fields: [embaixadorId], references: [id], onDelete: Cascade)
+  mecanica   Mecanica   @relation(fields: [mecanicaId], references: [id], onDelete: Cascade)
+  indicacoes Indicacao[]
+
+  @@index([codigo])
+  @@index([embaixadorId])
+  @@index([mecanicaId])
+  @@map("cupons")
+}
+
+// ============ INDICAÇÕES (VALIDAÇÕES) ============
+
+model Indicacao {
+  id               Int             @id @default(autoincrement())
+  cupomId          Int             @map("cupom_id")
+  codigoUsado      String          @map("codigo_usado")
+  nomeIndicado     String          @map("nome_indicado")
+  cpfIndicado      String?         @map("cpf_indicado")
+  telefoneIndicado String?         @map("telefone_indicado")
+  emailIndicado    String?         @map("email_indicado")
+  servico          String?
+  valorServico     Decimal?        @map("valor_servico") @db.Decimal(10, 2)
+  observacoes      String?
+  status           IndicacaoStatus @default(VALIDADO)
+  dataUso          DateTime        @default(now()) @map("data_uso")
+  createdAt        DateTime        @default(now()) @map("created_at")
+  updatedAt        DateTime        @updatedAt @map("updated_at")
+
+  validadoPorId Int     @map("validado_por_id")
+  validadoPor   Usuario @relation("ValidadoPor", fields: [validadoPorId], references: [id])
+
+  cupom Cupom @relation(fields: [cupomId], references: [id], onDelete: Cascade)
+
+  @@index([cupomId])
+  @@index([dataUso])
+  @@map("indicacoes")
+}
+
+// ============ AUDITORIA ============
+
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  usuarioId  Int?     @map("usuario_id")
+  acao       String
+  entidade   String
+  entidadeId Int?     @map("entidade_id")
+  detalhes   Json?
+  ip         String?
+  userAgent  String?  @map("user_agent")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  usuario Usuario? @relation(fields: [usuarioId], references: [id])
+
+  @@index([usuarioId, createdAt])
+  @@index([entidade, entidadeId])
+  @@map("audit_logs")
+}
