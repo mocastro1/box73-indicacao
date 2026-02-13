@@ -1,1 +1,31 @@
-@import "tailwindcss";
+/* Importa apenas theme + utilities do Tailwind v4, SEM preflight/reset
+   para não conflitar com os estilos do Vuetify */
+@import "tailwindcss/theme" layer(theme);
+@import "tailwindcss/utilities" layer(utilities);
+
+/* Custom Tailwind Utilities */
+@layer utilities {
+  .text-foreground {
+    @apply text-[#161826];
+  }
+  
+  .text-muted-foreground {
+    @apply text-[#868298];
+  }
+  
+  .bg-surface-bg {
+    @apply bg-[#F5F6FA];
+  }
+  
+  .bg-surface-card {
+    @apply bg-[#FFFFFF];
+  }
+  
+  .bg-sidebar-dark {
+    @apply bg-[#161827];
+  }
+  
+  .border-surface {
+    @apply border-[#E2E5EB];
+  }
+}

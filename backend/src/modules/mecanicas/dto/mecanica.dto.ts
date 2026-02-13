@@ -15,12 +15,12 @@ export enum MecanicaStatus {
 }
 
 export class CreateMecanicaDto {
-  @ApiProperty({ description: 'Nome da mecânica' })
+  @ApiProperty({ description: 'Nome da regra de cupom' })
   @IsNotEmpty()
   @IsString()
   nome: string;
 
-  @ApiPropertyOptional({ description: 'Descrição da mecânica' })
+  @ApiPropertyOptional({ description: 'Descrição da regra' })
   @IsOptional()
   @IsString()
   descricao?: string;
@@ -60,7 +60,7 @@ export class CreateMecanicaDto {
 
 export class UpdateMecanicaDto extends PartialType(CreateMecanicaDto) {
   @ApiPropertyOptional({
-    description: 'Status da mecânica',
+    description: 'Status da regra de cupom',
     enum: MecanicaStatus,
   })
   @IsOptional()

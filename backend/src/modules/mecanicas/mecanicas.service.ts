@@ -20,16 +20,35 @@ export class MecanicasService {
         where,
         skip,
         take: limit,
-        orderBy: { criadoEm: 'desc' },
+        orderBy: { createdAt: 'desc' },
         include: {
           _count: { select: { cupons: true } },
+          cupons: {
+            select: {
+              _count: {
+                select: {
+                  indicacoes: true,
+                },
+              },
+            },
+          },
         },
       }),
       this.prisma.mecanica.count({ where }),
     ]);
 
+    // Calculate totalValidacoes for each mecanica
+    const dataWithValidacoes = data.map((mecanica) => ({
+      ...mecanica,
+      totalValidacoes: mecanica.cupons.reduce(
+        (sum, cupom) => sum + cupom._count.indicacoes,
+        0,
+      ),
+      cupons: undefined, // Remove cupons array from response
+    }));
+
     return {
-      data,
+      data: dataWithValidacoes,
       total,
       page,
       pages: Math.ceil(total / limit),
@@ -64,7 +83,7 @@ export class MecanicasService {
     });
 
     if (!mecanica) {
-      throw new NotFoundException(`Mecânica #${id} não encontrada`);
+      throw new NotFoundException(`Regra de Cupom #${id} não encontrada`);
     }
 
     return mecanica;

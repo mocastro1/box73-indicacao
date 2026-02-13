@@ -1,0 +1,188 @@
+/* ============================================
+   BOX 73 - Design System (Modern Dark Theme)
+   ============================================ */
+
+/* Color Variables */
+:root {
+  /* Primary Colors */
+  --color-primary: #F97316;
+  --color-foreground: #161826;
+  --color-muted-foreground: #868298;
+  --color-success: #29A368;
+  --color-warning: #F59E38;
+  
+  /* Surface Colors */
+  --color-background: #F5F6FA;
+  --color-card: #FFFFFF;
+  --color-border: #E2E5EB;
+  --color-secondary: #F1F3F6;
+  
+  /* Sidebar Dark */
+  --color-sidebar-bg: #161827;
+  --color-sidebar-accent: #282838;
+  --color-sidebar-text: #84BAC4;
+  
+  /* Utilities */
+  --color-text: #161826;
+  --color-text-light: #868298;
+  --spacing-unit: 8px;
+}
+
+/* Typography */
+.text-primary-color {
+  color: var(--color-primary);
+}
+
+.text-secondary-color {
+  color: var(--color-secondary);
+}
+
+.font-weight-light {
+  font-weight: 300 !important;
+}
+
+.letter-spacing-1 {
+  letter-spacing: 0.05em;
+}
+
+/* Borders & Dividers */
+.border-primary {
+  border-color: var(--color-primary) !important;
+}
+
+.border-secondary {
+  border-color: var(--color-secondary) !important;
+}
+
+.divide-y > * + * {
+  border-top: 1px solid var(--color-border);
+}
+
+/* Buttons */
+.btn-primary {
+  background-color: var(--color-primary) !important;
+  color: white !important;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.btn-primary:hover {
+  background-color: #ea580c !important;
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+}
+
+.btn-secondary {
+  background-color: var(--color-foreground) !important;
+  color: white !important;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.btn-secondary:hover {
+  background-color: #0d0f1a !important;
+  box-shadow: 0 4px 12px rgba(22, 24, 38, 0.2);
+}
+
+/* Cards */
+.card-minimal {
+  border: 1px solid var(--color-border);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+}
+
+.card-minimal:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  border-color: var(--color-primary);
+}
+
+/* Badges & Chips */
+.badge-primary {
+  background-color: rgba(249, 115, 22, 0.1);
+  color: var(--color-primary);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badge-secondary {
+  background-color: rgba(22, 24, 38, 0.05);
+  color: var(--color-foreground);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Status Colors */
+.status-success {
+  color: var(--color-success);
+}
+
+.status-warning {
+  color: var(--color-warning);
+}
+
+.status-error {
+  color: #D32F2F;
+}
+
+.status-info {
+  color: var(--color-muted-foreground);
+}
+
+/* Form Elements */
+.form-input-focus:focus {
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+}
+
+/* Tables */
+.table-striped tbody tr:nth-child(odd) {
+  background-color: rgba(22, 24, 38, 0.02);
+}
+
+.table-hover tbody tr:hover {
+  background-color: rgba(249, 115, 22, 0.05);
+}
+
+/* Hover Effects */
+.hover-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Spacing Utility Classes */
+.gap-1 { gap: var(--spacing-unit); }
+.gap-2 { gap: calc(var(--spacing-unit) * 2); }
+.gap-3 { gap: calc(var(--spacing-unit) * 3); }
+.gap-4 { gap: calc(var(--spacing-unit) * 4); }
+
+/* Minimal Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  :root {
+    --spacing-unit: 6px;
+  }
+}

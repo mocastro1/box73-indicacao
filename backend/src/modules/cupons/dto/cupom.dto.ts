@@ -8,7 +8,7 @@ export class CreateCupomDto {
   @IsInt()
   embaixadorId: number;
 
-  @ApiProperty({ description: 'ID da mecânica' })
+  @ApiProperty({ description: 'ID da regra de cupom' })
   @IsNotEmpty()
   @IsInt()
   mecanicaId: number;

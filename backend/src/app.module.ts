@@ -8,6 +8,7 @@ import { MecanicasModule } from './modules/mecanicas/mecanicas.module';
 import { CuponsModule } from './modules/cupons/cupons.module';
 import { IndicacoesModule } from './modules/indicacoes/indicacoes.module';
 import { AuditModule } from './modules/audit/audit.module';
+import { AuditInterceptor } from './common/interceptors/audit.interceptor';
 
 @Module({
   imports: [
@@ -21,5 +22,6 @@ import { AuditModule } from './modules/audit/audit.module';
     CuponsModule,
     IndicacoesModule,
   ],
+  providers: [AuditInterceptor],
 })
 export class AppModule {}

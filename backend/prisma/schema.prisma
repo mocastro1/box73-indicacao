@@ -9,7 +9,6 @@ generator client {
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
 }
 
 // ============ ENUMS ============
@@ -76,7 +75,7 @@ model Embaixador {
   @@map("embaixadores")
 }
 
-// ============ MECÂNICAS (CAMPANHAS) ============
+// ============ REGRAS DE CUPOM (CAMPANHAS) ============
 
 model Mecanica {
   id                  Int             @id @default(autoincrement())

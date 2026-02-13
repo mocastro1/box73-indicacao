@@ -24,15 +24,15 @@ export class UsuariosService {
         where,
         skip,
         take: limit,
-        orderBy: { criadoEm: 'desc' },
+        orderBy: { createdAt: 'desc' },
         select: {
           id: true,
           nome: true,
           email: true,
           role: true,
           ativo: true,
-          criadoEm: true,
-          atualizadoEm: true,
+          createdAt: true,
+          updatedAt: true,
         },
       }),
       this.prisma.usuario.count({ where }),
@@ -55,8 +55,8 @@ export class UsuariosService {
         email: true,
         role: true,
         ativo: true,
-        criadoEm: true,
-        atualizadoEm: true,
+        createdAt: true,
+        updatedAt: true,
       },
     });
 
@@ -89,8 +89,8 @@ export class UsuariosService {
         email: true,
         role: true,
         ativo: true,
-        criadoEm: true,
-        atualizadoEm: true,
+        createdAt: true,
+        updatedAt: true,
       },
     });
   }
@@ -112,8 +112,8 @@ export class UsuariosService {
         email: true,
         role: true,
         ativo: true,
-        criadoEm: true,
-        atualizadoEm: true,
+        createdAt: true,
+        updatedAt: true,
       },
     });
   }
@@ -130,8 +130,8 @@ export class UsuariosService {
         email: true,
         role: true,
         ativo: true,
-        criadoEm: true,
-        atualizadoEm: true,
+        createdAt: true,
+        updatedAt: true,
       },
     });
   }

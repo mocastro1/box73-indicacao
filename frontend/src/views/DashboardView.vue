@@ -32,8 +32,8 @@
                 {{ item.status }}
               </v-chip>
             </template>
-            <template v-slot:item.criadoEm="{ item }">
-              {{ formatDate(item.criadoEm) }}
+            <template v-slot:item.createdAt="{ item }">
+              {{ formatDate(item.createdAt) }}
             </template>
           </v-data-table>
         </v-card>
@@ -70,15 +70,15 @@ const cards = ref([
   { title: 'Embaixadores', value: '0', icon: 'mdi-account-group', color: 'primary' },
   { title: 'Cupons Ativos', value: '0', icon: 'mdi-ticket-percent', color: 'secondary' },
   { title: 'Indicações', value: '0', icon: 'mdi-check-decagram', color: 'success' },
-  { title: 'Mecânicas Ativas', value: '0', icon: 'mdi-cog', color: 'info' },
+  { title: 'Regras Ativas', value: '0', icon: 'mdi-cog', color: 'info' },
 ])
 
 const headers = [
   { title: 'Cupom', key: 'cupom.codigo' },
   { title: 'Embaixador', key: 'cupom.embaixador.nome' },
-  { title: 'Cliente', key: 'nomeCliente' },
+  { title: 'Cliente', key: 'nomeIndicado' },
   { title: 'Status', key: 'status' },
-  { title: 'Data', key: 'criadoEm' },
+  { title: 'Data', key: 'createdAt' },
 ]
 
 const recentIndicacoes = ref([])
@@ -94,6 +94,7 @@ function statusColor(status: string) {
 }
 
 function formatDate(d: string) {
+  if (!d) return '-'
   return new Date(d).toLocaleDateString('pt-BR')
 }
 

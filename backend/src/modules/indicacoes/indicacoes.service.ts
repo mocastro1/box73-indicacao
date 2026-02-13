@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateIndicacaoDto } from './dto/indicacao.dto';
 
@@ -18,7 +22,7 @@ export class IndicacoesService {
         where,
         skip,
         take: limit,
-        orderBy: { criadoEm: 'desc' },
+        orderBy: { createdAt: 'desc' },
         include: {
           cupom: {
             include: {
@@ -41,14 +45,14 @@ export class IndicacoesService {
   async findByCupomIds(cupomIds: number[]) {
     return this.prisma.indicacao.findMany({
       where: { cupomId: { in: cupomIds } },
-      orderBy: { criadoEm: 'desc' },
+      orderBy: { createdAt: 'desc' },
     });
   }
 
   async findRecent(limit = 20) {
     return this.prisma.indicacao.findMany({
       take: limit,
-      orderBy: { criadoEm: 'desc' },
+      orderBy: { createdAt: 'desc' },
       include: {
         cupom: {
           include: {
@@ -66,6 +70,22 @@ export class IndicacoesService {
 
     if (!cupom) {
       throw new NotFoundException('Cupom não encontrado');
+    }
+
+    // Check for duplicate CPF validation for this cupom
+    if (dto.cpfIndicado) {
+      const cleanCpf = dto.cpfIndicado.replace(/\D/g, '');
+      const existing = await this.prisma.indicacao.findFirst({
+        where: {
+          cupomId: dto.cupomId,
+          cpfIndicado: cleanCpf,
+        },
+      });
+      if (existing) {
+        throw new ConflictException(
+          'Este CPF já foi validado para este cupom',
+        );
+      }
     }
 
     return this.prisma.indicacao.create({
@@ -124,12 +144,12 @@ export class IndicacoesService {
       include: {
         mecanica: true,
         indicacoes: {
-          orderBy: { criadoEm: 'desc' },
+          orderBy: { createdAt: 'desc' },
         },
       },
     });
 
-    const progressoPorCupom = cupons.map((cupom) => ({
+    const progressoPorCupom = cupons.map((cupom: any) => ({
       cupom: {
         id: cupom.id,
         codigo: cupom.codigo,
@@ -141,6 +161,8 @@ export class IndicacoesService {
         beneficioEmbaixador: cupom.mecanica.beneficioEmbaixador,
         beneficioCliente: cupom.mecanica.beneficioCliente,
         metaValidacoes: cupom.mecanica.metaValidacoes,
+        dataInicio: cupom.mecanica.dataInicio,
+        dataFim: cupom.mecanica.dataFim,
       },
       indicacoes: cupom.indicacoes,
       totalIndicacoes: cupom.indicacoes.length,

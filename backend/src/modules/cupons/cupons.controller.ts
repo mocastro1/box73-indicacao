@@ -27,18 +27,29 @@ export class CuponsController {
 
   @Get()
   @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'embaixadorId', required: false, type: Number })
   @ApiQuery({ name: 'mecanicaId', required: false, type: Number })
+  @ApiQuery({ name: 'search', required: false, type: String })
   findAll(
     @Query('page') page?: string,
+    @Query('limit') limit?: string,
     @Query('embaixadorId') embaixadorId?: string,
     @Query('mecanicaId') mecanicaId?: string,
+    @Query('search') search?: string,
   ) {
     return this.cuponsService.findAll(
       page ? parseInt(page, 10) : 1,
       embaixadorId ? parseInt(embaixadorId, 10) : undefined,
       mecanicaId ? parseInt(mecanicaId, 10) : undefined,
+      search,
+      limit ? parseInt(limit, 10) : undefined,
     );
+  }
+
+  @Get('ganhadores')
+  getGanhadores() {
+    return this.cuponsService.getGanhadores();
   }
 
   @Get('code/:codigo')

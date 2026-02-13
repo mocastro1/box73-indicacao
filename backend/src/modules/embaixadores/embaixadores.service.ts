@@ -29,7 +29,7 @@ export class EmbaixadoresService {
         where,
         skip,
         take: limit,
-        orderBy: { criadoEm: 'desc' },
+        orderBy: { createdAt: 'desc' },
         include: {
           _count: { select: { cupons: true } },
         },

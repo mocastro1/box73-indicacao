@@ -6,6 +6,7 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
+import { IsCpf } from '../../../common/decorators/is-cpf.decorator';
 
 export class CreateIndicacaoDto {
   @ApiProperty({ description: 'ID do cupom' })
@@ -18,9 +19,10 @@ export class CreateIndicacaoDto {
   @IsString()
   nomeIndicado: string;
 
-  @ApiPropertyOptional({ description: 'CPF do indicado' })
+  @ApiPropertyOptional({ description: 'CPF do indicado', example: '12345678901' })
   @IsOptional()
   @IsString()
+  @IsCpf({ message: 'CPF do indicado inválido' })
   cpfIndicado?: string;
 
   @ApiPropertyOptional({ description: 'Telefone do indicado' })

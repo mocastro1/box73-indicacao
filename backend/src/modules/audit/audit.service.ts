@@ -10,7 +10,7 @@ export class AuditService {
     acao: string;
     entidade: string;
     entidadeId?: number;
-    detalhes?: string;
+    detalhes?: any;
     ip?: string;
     userAgent?: string;
   }) {
@@ -40,7 +40,7 @@ export class AuditService {
         where,
         skip,
         take: limit,
-        orderBy: { criadoEm: 'desc' },
+        orderBy: { createdAt: 'desc' },
         include: {
           usuario: { select: { nome: true } },
         },
